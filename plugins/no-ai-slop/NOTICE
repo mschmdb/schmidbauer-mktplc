@@ -1,0 +1,18 @@
+no-ai-slop
+Copyright 2026 Matze Schmidbauer
+Licensed under the MIT License.
+
+This plugin contains material adapted from the "LLM cliché highlighter"
+by Simon Willison, https://github.com/simonw/tools
+(llm-cliche-highlighter.html), licensed under the Apache License,
+Version 2.0. A copy of that license is in LICENSES/Apache-2.0.txt.
+
+Changes made: the pattern list was reorganized into groups A to E,
+each pattern was rewritten as a move with shapes and a fix, German
+shapes and fixes were added, and patterns were renumbered. No code
+from the original tool is included.
+
+The pattern groups also draw on the Wikipedia project page
+"Wikipedia:Signs of AI writing",
+https://en.wikipedia.org/wiki/Wikipedia:Signs_of_AI_writing.
+The patterns are described in this plugin's own words.

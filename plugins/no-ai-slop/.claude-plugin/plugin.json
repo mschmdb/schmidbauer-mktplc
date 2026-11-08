@@ -1,0 +1,27 @@
+{
+  "name": "no-ai-slop",
+  "version": "1.0.0",
+  "description": "Writing rules against AI-sounding prose and fabricated claims, with pattern catalogues for English and German.",
+  "author": {
+    "name": "Matze Schmidbauer",
+    "url": "https://github.com/mschmdb"
+  },
+  "license": "MIT",
+  "keywords": ["writing", "style", "prose", "documentation", "ai-slop", "german"],
+  "userConfig": {
+    "ban_dashes": {
+      "type": "boolean",
+      "title": "Ban dramatic dashes",
+      "description": "Forbid em dashes and spaced en dashes as sentence breaks. Turn off if your style guide allows them.",
+      "default": true
+    },
+    "max_sentence_words": {
+      "type": "number",
+      "title": "Sentence-length ceiling (words)",
+      "description": "Upper limit for sentence length. A ceiling, not a target.",
+      "default": 25,
+      "min": 10,
+      "max": 60
+    }
+  }
+}
