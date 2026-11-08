@@ -7,6 +7,7 @@ A Claude Code skill that keeps written text free of AI tells and invented facts.
 - **Wording rules:** cut filler, turn nouns back into verbs, name the actor, split nested sentences, drop buzzwords.
 - **Rhetorical clichés:** 36 patterns such as staged reveals ("Here's the twist:"), "not just X, but Y" and fake profundity. The skill matches the move, not the words, so it works in any language.
 - **Repetition budget:** a figure used once is voice, five times is a tic. The skill counts moves across the whole text.
+- **Text deserts:** figures and comparisons buried in prose go into a table, a list or key figures. An optional script, `scripts/desert_check.py`, counts figures per paragraph and prose without structure in a Markdown draft.
 - **Truthfulness:** no invented numbers, APIs, sources or absolutes. Unchecked claims get flagged as "not verified".
 - **Counterweight:** numbers, sources, specific verbs and admitted uncertainty survive every cut.
 - **False positives:** a guide to what regex linters flag wrongly, so correct prose stays untouched.

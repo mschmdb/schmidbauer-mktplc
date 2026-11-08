@@ -10,7 +10,7 @@ Every entry has three parts:
 
 Match the move, never the example string. German often performs a move with different grammar than English (see `D8`), so never translate the English shapes word for word.
 
-Part 1 covers wording and grammar (G1 to G12, where G12 is German-only). Part 2 covers rhetorical clichés (A1 to E2, 36 patterns). Known false positives live in `false-positives.md`.
+Part 1 covers wording and grammar (G1 to G13, where G12 is German-only). Part 2 covers rhetorical clichés (A1 to E2, 36 patterns). Known false positives live in `false-positives.md`.
 
 ---
 
@@ -87,6 +87,31 @@ Part 1 covers wording and grammar (G1 to G12, where G12 is German-only). Part 2 
 - **Move:** English idioms translated word for word. Typical for machine-translated and model-written German.
 - **Shapes:** `Am Ende des Tages ...` (at the end of the day) `Das macht einen Unterschied.` (makes a difference) `in 2024` (instead of `2024` or `im Jahr 2024`) `Lass uns eintauchen.` (let's dive in)
 - **Fix:** use the German idiom (`letztlich`, `2024`) or drop the phrase. Instead of `Das macht einen Unterschied`, name the difference.
+
+### G13: Text deserts
+
+- **Move:** information that has the shape of a table, a list or a chart, delivered as a row of sentences.
+- **Shapes:** three or more figures in one paragraph (`14 von 18 Tickets erledigt, das entspricht 78 %, die Testabdeckung stieg von 61 % auf 67 %`); the same attributes repeated per item (`Variante A kostet X und dauert Y. Variante B kostet Z und dauert W.`); a status report as an essay (`Im Großen und Ganzen lief der Sprint gut ...`); an opening that builds context before the answer; a summary that restates the table above it.
+- **Fix:** answer first, then move the figures into a table, a list or key figures and keep one or two sentences of meaning. Keep every figure, add none. Rules and forms: `text-deserts.md`.
+
+Before:
+
+> Der Sprint lief im Großen und Ganzen gut. Das Team hat 14 der 18 geplanten Tickets abgeschlossen, was einer Quote von 78 % entspricht. Zwei Tickets wandern in den nächsten Sprint, weil die Payment-API nicht fertig war, zwei weitere blockieren fehlende Designs. Die Testabdeckung stieg von 61 % auf 67 %. Außerdem haben wir 9 Bugs aus dem Support behoben.
+
+After:
+
+> Sprint-Ergebnis: 14 von 18 Tickets erledigt. Der Rest ist blockiert.
+>
+> | Kennzahl | Wert |
+> |---|---|
+> | Tickets erledigt | 14 von 18 (78 %) |
+> | Testabdeckung | 61 % auf 67 % |
+> | Support-Bugs behoben | 9 |
+>
+> Offene Tickets:
+>
+> - 2 warten auf die Payment-API
+> - 2 warten auf Designs
 
 ---
 

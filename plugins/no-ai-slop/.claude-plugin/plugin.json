@@ -1,6 +1,6 @@
 {
   "name": "no-ai-slop",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "Writing rules against AI-sounding prose and fabricated claims, with pattern catalogues for English and German.",
   "author": {
     "name": "Matze Schmidbauer",

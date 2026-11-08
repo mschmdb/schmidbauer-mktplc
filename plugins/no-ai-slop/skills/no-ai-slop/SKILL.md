@@ -1,9 +1,9 @@
 ---
 name: no-ai-slop
-description: Writing rules against AI-sounding prose and fabricated claims, with pattern catalogues for English and German and a method for other languages. This skill should be used when writing or editing text meant for people (READMEs, docs, ADRs, commit messages, PR descriptions, UI copy, error messages, emails, reports) and when reviewing a text that sounds machine-written. It covers filler, nominal style, passive voice, rhetorical cliché moves, unsupported absolutes, unverified numbers and invented APIs. Not for code identifiers, logs, JSON or YAML, or direct quotes.
+description: Writing rules against AI-sounding prose and fabricated claims, with pattern catalogues for English and German and a method for other languages. This skill should be used when writing or editing text meant for people (READMEs, docs, ADRs, commit messages, PR descriptions, UI copy, error messages, emails, reports) and when reviewing a text that sounds machine-written. It covers filler, nominal style, passive voice, rhetorical cliché moves, unsupported absolutes, unverified numbers, invented APIs and text deserts (figures and comparisons buried in prose). Not for code identifiers, logs, JSON or YAML, or direct quotes.
 license: MIT
 metadata:
-  version: "1.0.0"
+  version: "1.1.0"
 ---
 
 # No AI Slop
@@ -38,7 +38,7 @@ When to read it:
 
 - **Reviewing, editing or rewriting a text, of any length:** always read the catalogue first. The rules in this file name the groups; only the catalogue has the shapes you need to spot them. Pattern IDs cited from memory are wrong; cite an ID only after reading its entry.
 - **Writing more than a few paragraphs:** read it before the cutting pass.
-- **Writing a commit message or a short reply:** this file is enough. Both catalogues use the same IDs (G1 to G11 for wording, A1 to E2 for 36 rhetorical patterns), so a rule here that cites an ID applies in every language. The German catalogue adds G12 for calques from English.
+- **Writing a commit message or a short reply:** this file is enough. Both catalogues use the same IDs (G1 to G11 for wording, G13 for text deserts, A1 to E2 for 36 rhetorical patterns), so a rule here that cites an ID applies in every language. The German catalogue adds G12 for calques from English.
 
 ## Core rules
 
@@ -50,6 +50,7 @@ When to read it:
 6. **Lists for lists.** Three or more parallel items, steps, options or comparisons go into a bulleted or numbered list. Put no intro line like "Here are some things to consider:" in front of it.
 7. **No buzzwords (G9).** Replace `seamless`, `robust`, `leverage` and their kin with the measurable property, or drop them. From a stack of three adjectives, keep the one you can prove.
 8. **No empty openers or closers (G10).** Start with the answer. Do not summarize what the reader just read.
+9. **No text deserts (G13).** More than two figures in a paragraph, or several items compared on the same attributes, go into a table, a list or key figures. Keep one or two sentences for what the structure cannot say. Move every figure, invent none. Rules, forms and examples: [references/text-deserts.md](references/text-deserts.md).
 
 ## Truthfulness
 
@@ -141,12 +142,13 @@ Before you delete a sentence, ask: does it carry a fact, a number, a source, an 
 2. Is a sentence over the length ceiling, or does a paragraph tick like a metronome? Split or merge.
 3. Is a verb hidden in a noun, or an actor hidden in a passive? Rewrite with subject and verb.
 4. Is a list buried in prose? Make it a list.
-5. Does a sentence only announce depth, a reveal or importance (A, B, D2 to D4)? Replace it with the fact it points at.
-6. Does any move, figure or buzzword appear three or more times? Keep the strongest instance.
-7. Is any number, file name, API or absolute claim unchecked? Verify it, flag it as "not verified", or cut it.
-8. Is there a chatbot leftover or markup debris (E)? Strip it.
-9. Did a cut remove a number, source, specific verb or caveat? Put it back.
-10. With the dash ban on: is there a dramatic dash? Replace it.
+5. Does a paragraph hold more than two figures, or compare items on the same attributes (G13)? Make it a table, list or key figures, with every figure kept and none added.
+6. Does a sentence only announce depth, a reveal or importance (A, B, D2 to D4)? Replace it with the fact it points at.
+7. Does any move, figure or buzzword appear three or more times? Keep the strongest instance.
+8. Is any number, file name, API or absolute claim unchecked? Verify it, flag it as "not verified", or cut it.
+9. Is there a chatbot leftover or markup debris (E)? Strip it.
+10. Did a cut remove a number, source, specific verb or caveat? Put it back.
+11. With the dash ban on: is there a dramatic dash? Replace it.
 
 ## Scope
 

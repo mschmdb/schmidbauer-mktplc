@@ -10,7 +10,7 @@ Every entry has three parts:
 
 Match the move, never the example string. A sentence can perform `B1` without containing a single word listed under it.
 
-Part 1 covers wording and grammar (G1 to G11). Part 2 covers rhetorical clichés (A1 to E2, 36 patterns). Known false positives live in `false-positives.md`.
+Part 1 covers wording and grammar (G1 to G11, plus G13 for structure; G12 is German-only). Part 2 covers rhetorical clichés (A1 to E2, 36 patterns). Known false positives live in `false-positives.md`.
 
 ---
 
@@ -81,6 +81,12 @@ Part 1 covers wording and grammar (G1 to G11). Part 2 covers rhetorical clichés
 - **Move:** a claim of uniqueness or totality without evidence.
 - **Shapes:** `the only tool that ...` `the first platform to ...` `no competitor offers ...` `market-leading` `always` `never` `every user`
 - **Fix:** back it with a source, narrow its scope (`the only tool we tested that ...`), or drop it.
+
+### G13: Text deserts
+
+- **Move:** information that has the shape of a table, a list or a chart, delivered as a row of sentences.
+- **Shapes:** three or more figures in one paragraph (`closed 14 of 18 tickets, a rate of 78%, coverage rose from 61% to 67%`); the same attributes repeated per item (`Option A costs X and takes Y. Option B costs Z and takes W.`); a status update as an essay; an opening that builds context before the answer; a summary that restates the table above it.
+- **Fix:** answer first, then move the figures into a table, a list or key figures and keep one or two sentences of meaning. Keep every figure, add none. Rules, forms and a before/after example: `text-deserts.md`.
 
 ---
 
