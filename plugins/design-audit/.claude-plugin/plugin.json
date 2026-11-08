@@ -1,0 +1,10 @@
+{
+  "name": "design-audit",
+  "version": "1.0.0",
+  "description": "Audit a live website's design, UX, motion and copy against 32 guidelines with browser measurements, screenshots and evidence-labeled findings.",
+  "author": {
+    "name": "Matze Schmidbauer",
+    "url": "https://github.com/mschmdb"
+  },
+  "license": "MIT"
+}

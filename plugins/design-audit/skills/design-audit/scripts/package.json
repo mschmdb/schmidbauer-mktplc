@@ -1,0 +1,12 @@
+{
+  "name": "design-audit-scripts",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "node --test"
+  },
+  "dependencies": {
+    "playwright": "1.59.1",
+    "@axe-core/playwright": "4.11.3"
+  }
+}
