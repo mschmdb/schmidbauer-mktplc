@@ -5,5 +5,29 @@
     "name": "Matze Schmidbauer",
     "url": "https://github.com/mschmdb"
   },
-  "plugins": []
+  "plugins": [
+    {
+      "name": "codex-review",
+      "source": "./plugins/codex-review",
+      "description": "Two-stage cross-model code review through the OpenAI Codex CLI: one Codex model finds issues with verbatim quotes, a second model verifies each one against the repository."
+    },
+    {
+      "name": "design-audit",
+      "source": "./plugins/design-audit",
+      "description": "Audit a live website against 32 design and UX guidelines with browser measurements, screenshots and evidence-labeled findings."
+    },
+    {
+      "name": "no-ai-slop",
+      "source": "./plugins/no-ai-slop",
+      "description": "Writing rules against AI-sounding prose and fabricated claims, with pattern catalogues for English and German."
+    },
+    {
+      "name": "wakemux",
+      "source": {
+        "source": "github",
+        "repo": "mschmdb/wakemux"
+      },
+      "description": "Run side tasks as Claude Code threads in cmux worktrees; each thread reports back to the main session and wakes it."
+    }
+  ]
 }
