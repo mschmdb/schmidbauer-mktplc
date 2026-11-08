@@ -1,5 +1,9 @@
 {
   "name": "schmidbauer-mktplc",
-  "owner": { "name": "Matze Schmidbauer", "url": "https://github.com/mschmdb" },
+  "description": "Claude Code plugins and skills by Matze Schmidbauer",
+  "owner": {
+    "name": "Matze Schmidbauer",
+    "url": "https://github.com/mschmdb"
+  },
   "plugins": []
 }
