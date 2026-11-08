@@ -1,0 +1,43 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "codex-review finder output",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["findings", "spec_drift", "verdict"],
+  "properties": {
+    "findings": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["severity", "file", "line", "issue", "fix", "quote", "confidence"],
+        "properties": {
+          "severity": { "type": "string", "enum": ["CRITICAL", "MAJOR", "MINOR", "NITPICK"] },
+          "file": { "type": "string", "description": "Repository-relative path." },
+          "line": { "type": "integer", "description": "Line number in the new version of the file." },
+          "issue": { "type": "string", "description": "One sentence: what is wrong." },
+          "fix": { "type": "string", "description": "One sentence: the concrete change." },
+          "quote": { "type": "string", "description": "The exact code at that line, copied verbatim." },
+          "confidence": { "type": "number", "description": "Probability from 0.0 to 1.0 that this is a real defect." }
+        }
+      }
+    },
+    "spec_drift": {
+      "type": "array",
+      "description": "Empty unless a spec was provided and the change diverges from it.",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["file", "expected", "actual", "justified", "reason"],
+        "properties": {
+          "file": { "type": "string" },
+          "expected": { "type": "string", "description": "What the spec says, quoted or paraphrased." },
+          "actual": { "type": "string", "description": "What the change does." },
+          "justified": { "type": "string", "enum": ["yes", "no", "unclear"] },
+          "reason": { "type": "string" }
+        }
+      }
+    },
+    "verdict": { "type": "string", "enum": ["APPROVE", "REQUEST_CHANGES", "NEEDS_DISCUSSION"] }
+  }
+}

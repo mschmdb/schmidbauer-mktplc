@@ -1,0 +1,27 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "codex-review verifier output",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["verdicts"],
+  "properties": {
+    "verdicts": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "status", "severity", "evidence"],
+        "properties": {
+          "id": { "type": "string", "description": "The finding id, e.g. F1." },
+          "status": { "type": "string", "enum": ["CONFIRMED", "REFUTED", "UNCERTAIN"] },
+          "severity": {
+            "type": "string",
+            "enum": ["CRITICAL", "MAJOR", "MINOR", "NITPICK", "NONE"],
+            "description": "Severity you assign when CONFIRMED; NONE otherwise."
+          },
+          "evidence": { "type": "string", "description": "One sentence citing the path:line you read, or what is missing to decide." }
+        }
+      }
+    }
+  }
+}
