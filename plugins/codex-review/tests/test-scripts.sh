@@ -146,6 +146,17 @@ has "pick-models: broken catalog gives empty verifier" "verifier=" "$out"
 has "pick-models: broken catalog keeps config finder" "finder=model-a" "$out"
 eq  "pick-models: broken catalog verifier value is empty" "verifier=" "$(printf '%s\n' "$out" | grep '^verifier=')"
 
+# Windows ships a python3 placeholder that exists but runs nothing.
+if command -v jq >/dev/null 2>&1; then
+  dead_python="$WORK/dead-python-bin"; mkdir -p "$dead_python"
+  printf '#!/usr/bin/env bash\necho "Python was not found" >&2\nexit 9009\n' > "$dead_python/python3"
+  chmod +x "$dead_python/python3"
+  home="$WORK/codex-home-b"
+  out=$(CODEX_HOME="$home" PATH="$dead_python:$PATH" bash "$SCRIPTS/pick-models.sh" --catalog "$catalog")
+  has "pick-models: placeholder python3 falls back to jq (finder)" "finder=model-a" "$out"
+  has "pick-models: placeholder python3 falls back to jq (verifier)" "verifier=model-b" "$out"
+fi
+
 # ---------------------------------------------------------------- run-codex.sh
 
 stub="$WORK/stub-bin"; mkdir -p "$stub"
