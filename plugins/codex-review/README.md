@@ -10,7 +10,7 @@ Refuted findings stay visible in one line each, so you can overrule the verifier
 
 ## Requirements
 
-- [Codex CLI](https://github.com/openai/codex) with `codex exec --output-schema` support, logged in with `codex login` (ChatGPT sign-in or API key).
+- [Codex CLI](https://github.com/openai/codex) with `codex exec --output-schema` support, logged in with `codex login` (ChatGPT sign-in) or with an API key (see below).
 - `git`, `bash`, and `python3` or `jq`.
 
 ## Install
@@ -25,6 +25,26 @@ Or with the skills CLI:
 ```
 npx skills add mschmdb/schmidbauer-mktplc --skill codex-review
 ```
+
+## Use with an API key
+
+```
+printenv OPENAI_API_KEY | codex login --with-api-key
+codex login status
+```
+
+This stores the key in `~/.codex/auth.json` in place of your ChatGPT sign-in. To keep both, give the key its own Codex home and set it in the shell that starts Claude Code:
+
+```
+export CODEX_HOME=~/.codex-apikey
+printenv OPENAI_API_KEY | codex login --with-api-key
+```
+
+That folder has no `config.toml`, so the skill picks both models from the catalog.
+
+A key set only as `CODEX_API_KEY` or `OPENAI_API_KEY`, without `codex login`, does not work yet: the preflight check reports "not logged in" and stops.
+
+Which models you get depends on your API organization and project. If Codex rejects a model, the skill shows the error and stops. Pick another one with `--verifier-model <slug>` or `model` in `config.toml`.
 
 ## Use
 
@@ -52,7 +72,7 @@ The skill raises reasoning effort on its own for risky diffs: auth, payments, mi
 
 ## Data
 
-Your diff, spec excerpts and root `CLAUDE.md`/`AGENTS.md` go to OpenAI under your Codex account. With an API key, runs are billed per token.
+Your diff, spec excerpts and root `CLAUDE.md`/`AGENTS.md` go to OpenAI under your Codex account. With an API key, every review runs Codex twice (finder and verifier; once with `--quick`), billed per token at API rates.
 
 ## Tests
 
