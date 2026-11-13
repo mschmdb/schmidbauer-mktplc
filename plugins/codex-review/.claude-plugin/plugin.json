@@ -1,6 +1,6 @@
 {
   "name": "codex-review",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Two-stage cross-model code review through the OpenAI Codex CLI: one Codex model finds issues with verbatim quotes, a second model verifies each one against the repository.",
   "author": {
     "name": "Matze Schmidbauer",

@@ -40,10 +40,10 @@ else
   catalog_json=$(codex debug models </dev/null 2>/dev/null || true)
 fi
 
-# Prints listed model slugs, best rank first. Empty on any parse problem.
-ranked_models() {
-  if command -v python3 >/dev/null 2>&1; then
-    printf '%s' "$catalog_json" | python3 -c '
+# Each parser prints listed model slugs, best rank first. Empty on any problem.
+ranked_with_python() {
+  command -v python3 >/dev/null 2>&1 || return 0
+  printf '%s' "$catalog_json" | python3 -c '
 import json, sys
 try:
     data = json.load(sys.stdin)
@@ -54,15 +54,20 @@ listed = [m for m in models if isinstance(m, dict) and m.get("visibility") == "l
 for m in sorted(listed, key=lambda m: m.get("priority", 99)):
     print(m["slug"])
 ' 2>/dev/null
-  elif command -v jq >/dev/null 2>&1; then
-    printf '%s' "$catalog_json" | jq -r '
-      (if type == "array" then . else (.models // []) end)
-      | map(select(type == "object" and .visibility == "list" and .slug != null))
-      | sort_by(.priority // 99) | .[].slug' 2>/dev/null
-  fi
 }
 
-ranked=$(ranked_models || true)
+ranked_with_jq() {
+  command -v jq >/dev/null 2>&1 || return 0
+  printf '%s' "$catalog_json" | jq -r '
+    (if type == "array" then . else (.models // []) end)
+    | map(select(type == "object" and .visibility == "list" and .slug != null))
+    | sort_by(.priority // 99) | .[].slug' 2>/dev/null
+}
+
+# On Windows, python3 can be a Microsoft Store placeholder that exists but
+# prints nothing. Fall back to jq whenever python3 gives no result.
+ranked=$(ranked_with_python || true)
+[ -z "$ranked" ] && ranked=$(ranked_with_jq || true)
 
 finder="$config_model"
 finder_source="config"

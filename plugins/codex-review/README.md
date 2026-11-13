@@ -12,6 +12,7 @@ Refuted findings stay visible in one line each, so you can overrule the verifier
 
 - [Codex CLI](https://github.com/openai/codex) with `codex exec --output-schema` support, logged in with `codex login` (ChatGPT sign-in) or with an API key (see below).
 - `git`, `bash`, and `python3` or `jq`.
+- Windows: run Claude Code with Git Bash or in WSL.
 
 ## Install
 
