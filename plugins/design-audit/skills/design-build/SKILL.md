@@ -71,7 +71,12 @@ Check these while you build. The rule IDs refer to `references/principles.md`, w
    ```
 
    This path exists only when the plugin is installed as a whole, with the dependencies set up (see the design-audit skill). Otherwise review screenshots at both widths against the step 5 checklist.
-3. Run the glance test on the first viewport, desktop and mobile. Show only the first-viewport screenshot to one or more fresh agents without context, or judge it yourself after a pause. Ask: what kind of site is this, what does it offer, for whom, what would you click first? "Cannot tell" is a valid answer. If the answer misses, fix the first viewport (P1, P2). If the design-audit skill is installed, follow its `glance-test.md`.
+3. Run the glance test on the first viewport, desktop and mobile. It is a simulation, not a user test.
+   - With the plugin installed, follow `${CLAUDE_PLUGIN_ROOT}/skills/design-audit/references/glance-test.md`.
+   - Otherwise do this. Spawn 3 fresh subagents per viewport. Give each only the screenshot (neutral file name, taken 2500 ms after load) and these questions: what do you remember, what kind of site is this, what does it offer, who is it for, what would you click first, what is unclear. "Cannot tell" is valid.
+   - Score site type and offer, audience and first action from 0 to 3 against the owner's purpose. An item passes when 2 of 3 observers score 2 or higher.
+   - Never answer the questions yourself. Without a subagent tool, mark P1 as not checked.
+   - If an item fails, fix the first viewport (P1, P2) and run the test again. Run it again after any later change to the first viewport.
 4. Fix what the gate finds inside the constraints of the design. If a fix would change a brand value, record a conflict instead.
 5. Run the project's own tests and guards (type check, lint, token and contrast tests).
 
