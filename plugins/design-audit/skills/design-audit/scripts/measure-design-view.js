@@ -137,13 +137,52 @@
 	const MAX_VISIBLE_TEXT = 300;
 	const visibleText = firstText.slice(0, MAX_VISIBLE_TEXT).map((e) => ({ selector: selectorOf(e), label: label(e), box: boxOf(e) }));
 
+	// ---- button test (H1, G2) ----
+	// The same block sits in measure-design-gestalt.js and measure-design-view.js; each file must stay self-contained.
+	// A filled button has a text label, a solid fill that differs from what is behind it, and a minimum size. Image links,
+	// glass controls (map zoom), icon-only buttons and on/off toggles are not filled buttons.
+	const BUTTON_MIN_ALPHA = 0.9; // own value: a fill more see-through than this is a glass control
+	const BUTTON_MIN_DISTANCE = 30; // own value: RGB distance between the fill and the colour behind it
+	const BUTTON_MIN_WIDTH = 48; // own value, px
+	const BUTTON_MIN_HEIGHT = 24; // own value, px (the WCAG 2.5.8 minimum)
+	const IMAGE_LINK_SHARE = 0.5; // own value: media covering this share of the box makes it an image link
+	const alphaOf = (c) => {
+		const slash = c.match(/\/\s*([\d.]+)(%?)\s*\)$/);
+		if (slash) return parseFloat(slash[1]) / (slash[2] ? 100 : 1);
+		const rgba = c.match(/^rgba\(([^)]+)\)/);
+		return rgba && rgba[1].split(',').length === 4 ? parseFloat(rgba[1].split(',')[3]) : 1;
+	};
+	const rgbOf = (c) => {
+		const m = c.match(/^rgba?\(([^)]+)\)/);
+		return m ? m[1].split(/[\s,/]+/).slice(0, 3).map(parseFloat) : null;
+	};
+	const hasLabelText = (e) => /[\p{L}\p{N}]/u.test((e.tagName === 'INPUT' ? e.value : e.innerText) || '');
+	const isToggle = (e) => e.hasAttribute('aria-pressed') || e.getAttribute('role') === 'switch';
+	const isImageLink = (e) => {
+		const r = e.getBoundingClientRect();
+		const media = [...e.querySelectorAll('img, picture, video, canvas, svg')].reduce((sum, m) => sum + m.getBoundingClientRect().width * m.getBoundingClientRect().height, 0);
+		return r.width * r.height > 0 && media / (r.width * r.height) >= IMAGE_LINK_SHARE;
+	};
+	const hasSolidFill = (e) => {
+		const bg = cs(e).backgroundColor;
+		if (isTransparent(bg) || alphaOf(bg) < BUTTON_MIN_ALPHA) return false;
+		const behind = effectiveBg(e.parentElement);
+		const a = rgbOf(bg);
+		const b = rgbOf(behind);
+		return a && b ? Math.hypot(a[0] - b[0], a[1] - b[1], a[2] - b[2]) >= BUTTON_MIN_DISTANCE : bg !== behind;
+	};
+	const sizedLikeButton = (e) => {
+		const r = e.getBoundingClientRect();
+		return r.width >= BUTTON_MIN_WIDTH && r.height >= BUTTON_MIN_HEIGHT;
+	};
+	const isFilledButton = (e) =>
+		e.matches('button, [role=button], input[type=submit], a[href]') && sizedLikeButton(e) && hasLabelText(e) && !isToggle(e) && !isImageLink(e) && hasSolidFill(e);
+
 	// ---- hierarchy (H1): filled, primary-looking buttons in the first viewport ----
-	// Visible, at least 24 px high, with a background of alpha above 0 that differs from the surrounding background.
+	// Filled buttons (see the button test above), visible in the first viewport.
 	const MAX_BUTTONS = 20;
-	const MIN_BUTTON_HEIGHT = 24;
-	const isFilled = (e) => !isTransparent(cs(e).backgroundColor) && cs(e).backgroundColor !== effectiveBg(e.parentElement);
 	const primaryButtons = firstVis
-		.filter((e) => e.matches('button, [role=button], input[type=submit], a[href]') && e.getBoundingClientRect().height >= MIN_BUTTON_HEIGHT && isFilled(e))
+		.filter(isFilledButton)
 		.slice(0, MAX_BUTTONS)
 		.map((e) => ({ selector: selectorOf(e), box: boxOf(e), label: e.value && e.tagName === 'INPUT' ? e.value : label(e), background: cs(e).backgroundColor, color: cs(e).color }));
 
@@ -240,7 +279,7 @@
 			cy: Math.round((c.top + c.bottom) / 2)
 		};
 	};
-	const isButton = (e) => e.matches('button, [role=button], input[type=submit], a[href]') && isFilled(e);
+	const isButton = isFilledButton;
 	const prominenceCandidates = [
 		// A filled button counts with its whole box: the fill is what the eye sees, not only the label.
 		...firstText.map((e) => (isButton(e) ? candidateOf(e, 'button', e.getBoundingClientRect()) : candidateOf(e, 'text', textRect(e)))),

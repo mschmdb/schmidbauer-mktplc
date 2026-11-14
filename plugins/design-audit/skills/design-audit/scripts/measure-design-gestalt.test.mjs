@@ -121,3 +121,11 @@ test('proximity: page sections are no sibling group, a single row needs three it
 	const row = p.groups.items.find((g) => g.signature === 'a');
 	assert.deepEqual([row.count, row.rows, row.inner, row.outer], [3, 1, 16, 40]);
 });
+
+test('similarity: links styled as buttons count as buttons; image links, toggles and the map control do not', opts, async () => {
+	const { deriveSimilarity } = await import('./lib/similarity.mjs');
+	const s = deriveSimilarity((await measureDesignFixture('buttons-patterns.html')).similarity);
+	assert.equal(s.roles.buttons.total, 3, 'one filled and two outlined link buttons');
+	assert.equal(s.roles.buttons.distinct, 2);
+	assert.ok(s.roles.buttons.differsIn.includes('background'));
+});

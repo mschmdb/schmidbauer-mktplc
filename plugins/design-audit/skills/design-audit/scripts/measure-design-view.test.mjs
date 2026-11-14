@@ -190,3 +190,8 @@ test('overflow: the offender list is capped at eight', opts, async () => {
 		assert.equal((await runDesignScripts(page)).overflow.offenders.length, 8);
 	}, mobile);
 });
+
+test('hierarchy: image links, translucent map controls, icon toggles and pressed toggles are no primary buttons; a link styled as button is', opts, async () => {
+	const h = deriveHierarchy((await measureDesignFixture('buttons-patterns.html')).hierarchy);
+	assert.deepEqual(h.primaryButtons.items.map((b) => b.label), ['Book a call']);
+});

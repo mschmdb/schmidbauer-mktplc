@@ -95,6 +95,47 @@
 		return s.boxShadow !== 'none' || border || fill;
 	};
 
+	// ---- button test (H1, G2) ----
+	// The same block sits in measure-design-gestalt.js and measure-design-view.js; each file must stay self-contained.
+	// A filled button has a text label, a solid fill that differs from what is behind it, and a minimum size. Image links,
+	// glass controls (map zoom), icon-only buttons and on/off toggles are not filled buttons.
+	const BUTTON_MIN_ALPHA = 0.9; // own value: a fill more see-through than this is a glass control
+	const BUTTON_MIN_DISTANCE = 30; // own value: RGB distance between the fill and the colour behind it
+	const BUTTON_MIN_WIDTH = 48; // own value, px
+	const BUTTON_MIN_HEIGHT = 24; // own value, px (the WCAG 2.5.8 minimum)
+	const IMAGE_LINK_SHARE = 0.5; // own value: media covering this share of the box makes it an image link
+	const alphaOf = (c) => {
+		const slash = c.match(/\/\s*([\d.]+)(%?)\s*\)$/);
+		if (slash) return parseFloat(slash[1]) / (slash[2] ? 100 : 1);
+		const rgba = c.match(/^rgba\(([^)]+)\)/);
+		return rgba && rgba[1].split(',').length === 4 ? parseFloat(rgba[1].split(',')[3]) : 1;
+	};
+	const rgbOf = (c) => {
+		const m = c.match(/^rgba?\(([^)]+)\)/);
+		return m ? m[1].split(/[\s,/]+/).slice(0, 3).map(parseFloat) : null;
+	};
+	const hasLabelText = (e) => /[\p{L}\p{N}]/u.test((e.tagName === 'INPUT' ? e.value : e.innerText) || '');
+	const isToggle = (e) => e.hasAttribute('aria-pressed') || e.getAttribute('role') === 'switch';
+	const isImageLink = (e) => {
+		const r = e.getBoundingClientRect();
+		const media = [...e.querySelectorAll('img, picture, video, canvas, svg')].reduce((sum, m) => sum + m.getBoundingClientRect().width * m.getBoundingClientRect().height, 0);
+		return r.width * r.height > 0 && media / (r.width * r.height) >= IMAGE_LINK_SHARE;
+	};
+	const hasSolidFill = (e) => {
+		const bg = cs(e).backgroundColor;
+		if (isTransparent(bg) || alphaOf(bg) < BUTTON_MIN_ALPHA) return false;
+		const behind = effectiveBg(e.parentElement);
+		const a = rgbOf(bg);
+		const b = rgbOf(behind);
+		return a && b ? Math.hypot(a[0] - b[0], a[1] - b[1], a[2] - b[2]) >= BUTTON_MIN_DISTANCE : bg !== behind;
+	};
+	const sizedLikeButton = (e) => {
+		const r = e.getBoundingClientRect();
+		return r.width >= BUTTON_MIN_WIDTH && r.height >= BUTTON_MIN_HEIGHT;
+	};
+	const isFilledButton = (e) =>
+		e.matches('button, [role=button], input[type=submit], a[href]') && sizedLikeButton(e) && hasLabelText(e) && !isToggle(e) && !isImageLink(e) && hasSolidFill(e);
+
 	// ---- content boxes (G1) ----
 	// Proximity compares what a reader sees: text lines, media and controls. The padding box of a wrapper is not a content box.
 	// A box that draws its own edge (border, shadow, fill) counts with that edge, unless it spans the full page width (a band).
@@ -342,12 +383,19 @@
 		const linkText = [...parent.querySelectorAll('a')].reduce((n, a) => n + bare(a.textContent), 0);
 		return bare(parent.textContent) - linkText > 0;
 	};
-	// A link styled as a button: not inline, with a visible edge (fill or border) and vertical padding of at least 6 px.
-	const looksLikeButtonLink = (e) =>
-		e.tagName === 'A' && e.hasAttribute('href') && cs(e).display !== 'inline' && px(cs(e).paddingTop) >= 6 && hasVisibleEdge(e);
+	// A link styled as a button: not inline, a text label of at most 40 characters, a visible edge (fill or border), button
+	// size (at most 80 px high) and padding on the side or top. Buttons often get their height from `min-height`, so side padding counts.
+	const BUTTON_LINK_MAX_HEIGHT = 80; // own value
+	const BUTTON_LINK_MAX_CHARS = 40; // own value
+	const looksLikeButtonLink = (e) => {
+		if (e.tagName !== 'A' || !e.hasAttribute('href') || cs(e).display === 'inline' || !sizedLikeButton(e) || !hasVisibleEdge(e)) return false;
+		if (e.getBoundingClientRect().height > BUTTON_LINK_MAX_HEIGHT || !hasLabelText(e) || isImageLink(e) || bare(e.innerText || '') > BUTTON_LINK_MAX_CHARS) return false;
+		return px(cs(e).paddingTop) >= 6 || px(cs(e).paddingLeft) >= 12;
+	};
 	const isCard = (e) => ['ARTICLE', 'LI', 'DIV'].includes(e.tagName) && px(cs(e).borderRadius) >= 6 && hasVisibleEdge(e) && e.getBoundingClientRect().height > 120;
 	const roles = {
-		buttons: roleVariants(vis.filter((e) => e.matches('button, [role=button], input[type=submit], input[type=button]') || looksLikeButtonLink(e))),
+		// On/off toggles (aria-pressed, role=switch) and icon-only buttons are separate control families and stay out of the button role.
+		buttons: roleVariants(vis.filter((e) => (e.matches('button, [role=button], input[type=submit], input[type=button]') && !isToggle(e) && hasLabelText(e)) || looksLikeButtonLink(e))),
 		links: roleVariants(vis.filter((e) => e.tagName === 'A' && e.hasAttribute('href') && isInlineInText(e))),
 		cards: roleVariants(vis.filter(isCard))
 	};
