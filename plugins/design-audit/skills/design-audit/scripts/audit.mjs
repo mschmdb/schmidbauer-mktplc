@@ -3,11 +3,13 @@
 // design measurements and pixel measures of the first viewport, screenshots, a scroll series and
 // load-animation frames, each for desktop and mobile.
 // Usage: node audit.mjs <url> <output-dir>
-// Output: <output-dir>/audit.json { url, notes, desktop, mobile } plus the PNG files it names.
+// Output: <output-dir>/audit.json { url, incomplete, notes, desktop, mobile } plus the PNG files it names.
+// stdout: a short JSON summary (paths, notes, incomplete flag, per-viewport status).
 import { chromium, devices } from 'playwright';
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { auditViewport, MOBILE_DEVICE } from './audit-viewport.mjs';
+import { summarise } from './lib/summary.mjs';
 
 const [url, out] = process.argv.slice(2);
 if (!url || !out) {
@@ -33,7 +35,8 @@ try {
 	writeFileSync(join(out, 'audit.json'), JSON.stringify(result, null, 1));
 }
 
-console.log(JSON.stringify(result, null, 1));
+// The full result is in audit.json; stdout stays short so an agent session is not flooded.
+console.log(JSON.stringify(summarise(result, out), null, 1));
 for (const name of ['desktop', 'mobile']) {
 	if (!result[name]?.measure) {
 		console.error(`${name} audit did not complete. See "notes" in audit.json.`);

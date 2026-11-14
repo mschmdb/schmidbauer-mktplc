@@ -37,8 +37,12 @@ test('audit.mjs writes audit.json with desktop and mobile results and the PNG fi
 	try {
 		const { port } = /** @type {import('node:net').AddressInfo} */ (server.address());
 		const url = `http://127.0.0.1:${port}/`;
-		const { code } = await runAudit(url, out);
+		const { code, stdout } = await runAudit(url, out);
 		assert.equal(code, 0);
+		const summary = JSON.parse(stdout);
+		assert.equal(summary.auditJson, join(out, 'audit.json'));
+		assert.equal(summary.incomplete, false);
+		assert.ok(stdout.length < 1500, `stdout is ${stdout.length} bytes`);
 
 		const audit = JSON.parse(readFileSync(join(out, 'audit.json'), 'utf8'));
 		assert.deepEqual(Object.keys(audit).sort(), ['desktop', 'incomplete', 'mobile', 'notes', 'url']);

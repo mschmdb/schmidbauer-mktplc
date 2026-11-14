@@ -33,14 +33,14 @@ Run:
 node ${CLAUDE_SKILL_DIR}/scripts/audit.mjs <url> <temp-dir>/design-audit/<slug>
 ```
 
-Use the system temp directory and a short slug. Run it again for each subpage.
+Use the system temp directory and a short slug. The script prints a short summary: paths, `notes`, `incomplete` and the status per viewport. The full result is `<dir>/audit.json`. Read parts of it, not the whole file.
 
 The script measures desktop (1440 x 900) and mobile (a Playwright device descriptor) in full. Per viewport it writes load frames, a first-viewport screenshot with greyscale and blurred copies, a full-page screenshot, a scroll series, and the measurements `measure`, `design`, `pixels` and `focus`. axe-core runs on desktop only. Read `${CLAUDE_SKILL_DIR}/references/audit-output.md` when you interpret fields or file names.
 
 If the run fails:
 
 - `Cannot find package 'playwright'` or a missing browser: run the setup step.
-- `notes` in `audit.json` lists timeouts, an unsettled page or a failed measurement. Report those parts as "Not checked".
+- `incomplete: true` or entries in `notes` mean a timeout, an unsettled page, a failed screenshot or a failed measurement (`<viewport>.missing` names the step). The rest of the data stays. Report the missing parts as "Not checked". Exit code 1 means a viewport has no page measurement.
 - Status 401, 403 or 429, a login page or a bot wall: the measurements describe the wall. Ask for access or use a real browser session.
 - A cookie banner covers the page: name it as a finding if it blocks content. Judge the rest from the scroll series or a real browser after dismissing it.
 
