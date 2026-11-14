@@ -18,9 +18,12 @@ test('text counts skip opacity 0, sr-only, off-screen and aria-hidden text (item
 
 test('smallTargets skips inline text links and hidden inputs, tests spacing, reports a total (item 5)', opts, async () => {
 	const m = await measureFixture('targets.html');
-	assert.equal(m.smallTargets.total, 3);
+	// 3 icon buttons plus 2 adjacent nav links (links among other links are not "in text")
+	assert.equal(m.smallTargets.total, 5);
+	// The wide nav links pass the 24 px circle test; only the two 16 px buttons 2 px apart fail.
 	assert.equal(m.smallTargets.failingSpacing, 2);
-	assert.equal(m.smallTargets.items.length, 3);
+	assert.equal(m.smallTargets.items.length, 5);
+	assert.ok(m.smallTargets.items.some((i) => /Home/.test(i)));
 	assert.ok(!m.smallTargets.items.some((i) => /terms|Newsletter/.test(i)));
 	assert.ok(m.smallTargets.items.some((i) => /isolated/.test(i) && /spacing ok/.test(i)));
 });

@@ -95,11 +95,14 @@
 	// (their visible label is measured instead). An undersized target passes on spacing when a 24 px circle
 	// centred on it touches no other target. Counts are signals; confirm by hand.
 	const TARGET_MIN = 24;
-	const isInlineInText = (e) =>
-		e.tagName === 'A' &&
-		cs(e).display === 'inline' &&
-		!!e.parentElement &&
-		e.parentElement.textContent.trim().length > e.textContent.trim().length;
+	// Link inside a sentence: the parent holds text beyond its links (nav bars and link lists do not).
+	const isInlineInText = (e) => {
+		const parent = e.parentElement;
+		if (e.tagName !== 'A' || cs(e).display !== 'inline' || !parent) return false;
+		const bare = (text) => text.replace(/\s+/g, '').length;
+		const linkText = [...parent.querySelectorAll('a')].reduce((n, a) => n + bare(a.textContent), 0);
+		return bare(parent.textContent) - linkText > 0;
+	};
 	const targetBox = (e) => {
 		if (e.tagName === 'INPUT' && !visible(e)) {
 			const label = e.labels && e.labels[0];
