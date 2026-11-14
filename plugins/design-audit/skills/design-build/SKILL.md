@@ -21,25 +21,27 @@ A given design beats this skill's taste. With a CI or an existing design system,
 
 ## 1. Intake
 
-Find the design that already exists. Read `references/intake.md`. Check in this order: token files and CSS in the repo, the component library, a live site or dev server, a brand PDF (read as page images), screenshots. Also read `CLAUDE.md`, `AGENTS.md`, `README.md` and `docs/`.
+Find the design that already exists. Read `references/intake.md`. Check in this order: token files and CSS in the repo, the component library, a live site or dev server, a brand PDF (read as page images), screenshots. Also read `CLAUDE.md`, `AGENTS.md`, `README.md`, `docs/` and the code comments that describe design intent.
 
-- A live site or dev server: `node ${CLAUDE_SKILL_DIR}/scripts/extract-tokens.mjs <url>` prints observed tokens. It needs the dependencies of the design-audit skill.
+- A live site or dev server: `node ${CLAUDE_SKILL_DIR}/scripts/extract-tokens.mjs <url>` prints observed tokens. It needs the sibling folder `skills/design-audit` with its dependencies installed. It also lists variables used but never defined. Record them as gaps.
 - Nothing found: ask once for a CI, a token export or a reference site. If none exists, go to step 3 without a CI.
 
 ## 2. Record it in DESIGN.md
 
-Read `references/design-md.md`. Write each value with its source and status (specified, observed, estimated, derived). List gaps (what the design does not define) and conflicts (where sources disagree or a brand value fails a rule). If a DESIGN.md exists, read it and extend it. Do not replace it.
+Read `references/design-md.md`. Write each value with its source and status (specified, observed, estimated, derived). List gaps (what the design does not define) and conflicts (where sources disagree or a brand value fails a rule). If a DESIGN.md exists, read it and extend it. Do not replace it. Scope is the whole site. Page-level decisions go into the Decisions log.
 
 ## 3. Direction
 
 - With a CI: restate its intent in two or three sentences. List what it leaves open.
-- Without a CI: write a brief from the subject (audience, task, tone). Commit to a direction before code.
+- Write the five-line brief from `references/process.md` §1 into DESIGN.md. If the user gave none, ask for audience, task and content source first. Do not invent them.
+- Without a CI: derive the direction from the brief. Commit to it before code.
 - For type, colour, layout and imagery, ask "default or decision?" (K2). Keep a default only with a reason from the project.
 - Keep the structure conventional. Put distinctiveness into type, imagery, content and detail.
 
 ## 4. Tokens, then components
 
-Read `references/process.md`. Write the tokens first as CSS custom properties. Build components with all states: default, hover, focus-visible, active, disabled, loading, empty, error. Design desktop and mobile together in the same pass. Use real content. Never invent stats, logos or testimonials.
+Read `references/process.md`. Reuse existing components and patterns before you write new ones. With a complete token set, add no tokens. Otherwise write the missing tokens first as CSS custom properties.
+Build components with the states that apply: default, hover, focus-visible, active, disabled, loading, empty, error. Drop the others and note why. Design desktop and mobile together in the same pass. Use real content. Never invent stats, logos or testimonials.
 
 For stack details (Svelte, Tailwind v4, shadcn-style kits, plain CSS), read `references/adapters.md`.
 

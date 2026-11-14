@@ -72,7 +72,7 @@ Build the first viewport against the five-second rule (P1, P2). A first-time vis
 - One primary action (H1), visible without scrolling, left or centre (P3).
 - A continuation cue: the next section starts inside the viewport (P2). Never cut cleanly at the fold.
 - No overlay, banner or autoplay on top of it.
-- On mobile the same holds with the real viewport height. Test at 390 x 844.
+- On mobile the same holds with the real viewport height. Test at 390 px wide. Use a real phone height, for example 844 px (the scripts use the iPhone 13 device, 664 px of visible height).
 
 ## 7. Content
 
