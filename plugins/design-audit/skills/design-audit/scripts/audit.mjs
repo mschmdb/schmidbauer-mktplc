@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 // Audit one URL: axe-core (desktop), page measurements, AI-look signals, text repetition,
-// screenshots, a scroll series and load-animation frames, each for desktop and mobile.
+// design measurements and pixel measures of the first viewport, screenshots, a scroll series and
+// load-animation frames, each for desktop and mobile.
 // Usage: node audit.mjs <url> <output-dir>
 // Output: <output-dir>/audit.json { url, notes, desktop, mobile } plus the PNG files it names.
 import { chromium, devices } from 'playwright';
@@ -11,6 +12,9 @@ import { fileURLToPath } from 'node:url';
 import { focusWalk } from './focus-walk.mjs';
 import { scrollSeriesPositions } from './lib/scroll.mjs';
 import { finishMeasure } from './lib/post.mjs';
+import { finishDesign } from './lib/design.mjs';
+import { runDesignScripts } from './design-scripts.mjs';
+import { pixelReport } from './pixels.mjs';
 import { scrollWholePage, waitForSettled } from './page-prep.mjs';
 
 const FRAME_TIMES_MS = [300, 1000, 2500];
@@ -43,6 +47,8 @@ function emptyViewport(name, contextOptions) {
 		scrollHeight: null,
 		scrollShots: [],
 		measure: null,
+		design: null,
+		pixels: null,
 		focus: null,
 		axe: null,
 		axeIncomplete: null
@@ -115,6 +121,21 @@ async function auditViewport(browser, name, contextOptions, notes) {
 			result.axeIncomplete = axe.incomplete.map((v) => ({ id: v.id, nodes: v.nodes.length, help: v.help }));
 		}
 		result.measure = await measure(page);
+		// Design measurements and the first-viewport pixels run at scroll position 0, before the focus walk moves the page.
+		try {
+			const { design, tells } = finishDesign(await runDesignScripts(page));
+			result.design = design;
+			result.measure.tells = { ...result.measure.tells, ...tells };
+		} catch (error) {
+			notes.push(`${name}: design measurements failed: ${error.message.split('\n')[0]}`);
+		}
+		try {
+			const viewportFile = `${name}-viewport.png`;
+			await shot(page, viewportFile);
+			result.pixels = await pixelReport(out, viewportFile);
+		} catch (error) {
+			notes.push(`${name}: pixel measures failed: ${error.message.split('\n')[0]}`);
+		}
 		result.focus = await focusWalk(page);
 	} catch (error) {
 		notes.push(`${name}: audit failed: ${error.message.split('\n')[0]}`);

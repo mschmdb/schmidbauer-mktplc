@@ -95,3 +95,86 @@ test('limits: scanned elements are reported and the cap does not bite on small p
 	assert.equal(raw.limits['measure-design.js'].capped, false);
 	assert.ok(raw.limits['measure-design.js'].scanned > 10);
 });
+
+/** Every object with a `selector` string and a `box` in a derived tree. */
+function collectEvidence(node, found = []) {
+	if (Array.isArray(node)) node.forEach((n) => collectEvidence(n, found));
+	else if (node && typeof node === 'object') {
+		if (typeof node.selector === 'string' && node.box) found.push(node);
+		Object.values(node).forEach((n) => collectEvidence(n, found));
+	}
+	return found;
+}
+
+test('every reported selector resolves to an element at the reported box', opts, async () => {
+	const { finishDesign } = await import('./lib/design.mjs');
+	const { withFixture } = await import('./browser-helpers.mjs');
+	const { runDesignScripts } = await import('./design-scripts.mjs');
+	for (const name of ['design-clean.html', 'design-gestalt-violations.html', 'design-generic-ai.html', 'design-first-viewport.html']) {
+		await withFixture(name, async (page) => {
+			const { design, tells } = finishDesign(await runDesignScripts(page));
+			const evidence = [...collectEvidence(design), ...collectEvidence(tells)];
+			assert.ok(evidence.length > 20, `${name}: ${evidence.length} entries`);
+			const unresolved = await page.evaluate((items) => {
+				const bad = [];
+				for (const { selector, box } of items) {
+					const el = document.querySelector(selector);
+					const r = el && el.getBoundingClientRect();
+					const same = r && Math.abs(r.left + scrollX - box.x) <= 1 && Math.abs(r.top + scrollY - box.y) <= 1;
+					// Group entries report the union of their members: the selector is the parent, so only existence counts there.
+					if (!el || (!same && !(el.contains(document.elementFromPoint(box.x, box.y)) || el.children.length > 1))) bad.push(selector);
+				}
+				return bad;
+			}, evidence.map(({ selector, box }) => ({ selector, box })));
+			assert.deepEqual(unresolved, [], `${name}: selectors that do not resolve`);
+		});
+	}
+});
+
+test('false-positive guard: the clean fixture fires no violation list', opts, async () => {
+	const { finishDesign } = await import('./lib/design.mjs');
+	const { design } = finishDesign(await measureDesignFixture('design-clean.html'));
+	assert.deepEqual(design.proximity.violations, []);
+	assert.deepEqual(design.proximity.headings.violations, []);
+	assert.deepEqual(design.proximity.labels.violations, []);
+	assert.deepEqual(design.proximity.groups.violations, []);
+	assert.deepEqual(design.region.deep, []);
+	assert.equal(design.hierarchy.primaryButtons.count, 1);
+	assert.equal(design.firstViewport.weights.nearLargest.competing, false);
+});
+
+test('the violation fixture fires all three proximity lists and the generic fixture shows its tells', opts, async () => {
+	const { finishDesign } = await import('./lib/design.mjs');
+	const bad = finishDesign(await measureDesignFixture('design-gestalt-violations.html')).design;
+	assert.equal(bad.proximity.headings.violations.length, 1);
+	assert.equal(bad.proximity.labels.violations.length, 1);
+	assert.equal(bad.proximity.groups.violations.length, 1);
+	assert.equal(bad.region.maxDepth, 4);
+	const generic = finishDesign(await measureDesignFixture('design-generic-ai.html'));
+	assert.equal(generic.tells.defaultFontsOnly, true);
+	assert.ok(generic.design.hierarchy.primaryButtons.count >= 3);
+});
+
+test('the page scripts call getComputedStyle at most once per element', opts, async () => {
+	const { withFixture } = await import('./browser-helpers.mjs');
+	const { designScriptSources } = await import('./design-scripts.mjs');
+	await withFixture('design-generic-ai.html', async (page) => {
+		for (const { file, source } of designScriptSources()) {
+			const repeated = await page.evaluate((src) => {
+				const original = window.getComputedStyle;
+				const seen = new Map();
+				window.getComputedStyle = function (el, ...rest) {
+					seen.set(el, (seen.get(el) || 0) + 1);
+					return original.call(this, el, ...rest);
+				};
+				try {
+					(0, eval)(src);
+				} finally {
+					window.getComputedStyle = original;
+				}
+				return [...seen.values()].filter((n) => n > 1).length;
+			}, source);
+			assert.equal(repeated, 0, `${file}: elements styled more than once`);
+		}
+	});
+});

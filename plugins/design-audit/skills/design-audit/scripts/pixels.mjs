@@ -2,6 +2,7 @@
 // plus a greyscale copy and a blurred copy for the hierarchy check (H2, C5, S2).
 // All thresholds are fixed values of this rule set, not conventions.
 import sharp from 'sharp';
+import { basename, join } from 'node:path';
 
 /** Sobel magnitude (0 to 1020 on 0 to 255 greyscale) above which a pixel counts as edge. A 32 level step gives 128. */
 export const EDGE_THRESHOLD = 128;
@@ -154,4 +155,22 @@ export async function writeGreyscale(source, destination) {
  */
 export async function writeBlurred(source, destination, sigma = BLUR_SIGMA) {
 	await sharp(source).flatten({ background: '#ffffff' }).blur(sigma).png().toFile(destination);
+}
+
+/**
+ * Measure one first-viewport screenshot and write its greyscale and blurred copies next to it.
+ * @param {string} dir output directory that holds the screenshot
+ * @param {string} file screenshot file name inside `dir`, e.g. `desktop-viewport.png`
+ * @returns {Promise<{ file: string, greyFile: string, blurFile: string, width: number, height: number, colourfulness: number, edgeDensity: number, whitespaceShare: number }>}
+ */
+export async function pixelReport(dir, file) {
+	const stem = basename(file, '.png');
+	const greyFile = `${stem}-grey.png`;
+	const blurFile = `${stem}-blur.png`;
+	const [measures] = await Promise.all([
+		analyzePixels(join(dir, file)),
+		writeGreyscale(join(dir, file), join(dir, greyFile)),
+		writeBlurred(join(dir, file), join(dir, blurFile))
+	]);
+	return { file, greyFile, blurFile, ...measures };
 }

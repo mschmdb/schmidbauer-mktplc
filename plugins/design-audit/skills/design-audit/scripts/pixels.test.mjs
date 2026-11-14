@@ -4,7 +4,7 @@ import { mkdtempSync, rmSync, existsSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import sharp from 'sharp';
-import { analyzePixels, colourfulness, edgeDensity, whitespaceShare, writeGreyscale, writeBlurred, EDGE_THRESHOLD, WHITESPACE_DISTANCE } from './pixels.mjs';
+import { pixelReport, analyzePixels, colourfulness, edgeDensity, whitespaceShare, writeGreyscale, writeBlurred, EDGE_THRESHOLD, WHITESPACE_DISTANCE } from './pixels.mjs';
 
 let dir;
 const files = {};
@@ -86,4 +86,15 @@ test('writeBlurred softens edges and keeps the size', async () => {
 
 test('a missing file rejects with a readable error', async () => {
 	await assert.rejects(() => analyzePixels(join(dir, 'missing.png')), /missing\.png/);
+});
+
+test('pixelReport measures a screenshot and writes the grey and blurred copies beside it', async () => {
+	const { copyFileSync } = await import('node:fs');
+	copyFileSync(files.quarter, join(dir, 'desktop-viewport.png'));
+	const report = await pixelReport(dir, 'desktop-viewport.png');
+	assert.equal(report.file, 'desktop-viewport.png');
+	assert.equal(report.greyFile, 'desktop-viewport-grey.png');
+	assert.equal(report.blurFile, 'desktop-viewport-blur.png');
+	assert.ok(existsSync(join(dir, report.greyFile)) && existsSync(join(dir, report.blurFile)));
+	assert.equal(report.whitespaceShare, 0.75);
 });

@@ -51,6 +51,11 @@ test('audit.mjs writes audit.json with desktop and mobile results and the PNG fi
 			assert.ok(v.measure.title === 'Fixture site', `${name} measure.title`);
 			assert.ok(v.measure.paragraphs.length > 0, `${name} paragraphs`);
 			assert.ok(Array.isArray(v.measure.smallTargets.items));
+			assert.ok(v.design.typography.bodySize > 0, `${name} design.typography.bodySize`);
+			assert.equal(typeof v.measure.tells.gradientText, 'number', `${name} tells merged`);
+			assert.ok(v.measure.tells.cardLikeBoxes !== undefined, 'existing tells kept');
+			assert.ok(v.pixels.whitespaceShare > 0 && v.pixels.colourfulness >= 0, `${name} pixels`);
+			for (const file of [v.pixels.file, v.pixels.greyFile, v.pixels.blurFile]) assert.ok(existsSync(join(out, file)), `${file} exists`);
 			assert.equal(v.frames.length, 3);
 			assert.ok(v.timing.settledMs >= v.timing.loadMs);
 			assert.ok(v.scrollShots.length >= 1 && v.scrollShots.length <= 11);
