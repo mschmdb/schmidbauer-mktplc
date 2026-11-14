@@ -29,10 +29,11 @@
 		const r = el.getBoundingClientRect();
 		return { x: Math.round(r.left + window.scrollX), y: Math.round(r.top + window.scrollY), w: Math.round(r.width), h: Math.round(r.height) };
 	};
-	// Stable CSS selector: #id when unique, else tag:nth-of-type segments up to 5 levels (anchored at <html> when short enough).
-	const selectorOf = (el) => {
+	// Stable CSS selector that resolves to exactly this element: #id when unique, else tag:nth-of-type segments.
+	// Tries 5 levels first (short); when that matches more than one element, it uses the full path up to <html>.
+	const pathOf = (el, maxDepth) => {
 		const parts = [];
-		for (let n = el; n && n.nodeType === 1 && parts.length < 5; n = n.parentElement) {
+		for (let n = el; n && n.nodeType === 1 && parts.length < maxDepth; n = n.parentElement) {
 			if (n.id && document.querySelectorAll(`#${CSS.escape(n.id)}`).length === 1) {
 				parts.unshift(`#${CSS.escape(n.id)}`);
 				break;
@@ -46,6 +47,10 @@
 			parts.unshift(same.length > 1 ? `${tag}:nth-of-type(${same.indexOf(n) + 1})` : tag);
 		}
 		return parts.join(' > ');
+	};
+	const selectorOf = (el) => {
+		const short = pathOf(el, 5);
+		return document.querySelectorAll(short).length === 1 ? short : pathOf(el, Infinity);
 	};
 	const NOT_RENDERED = new Set(['SCRIPT', 'STYLE', 'NOSCRIPT', 'TEMPLATE']);
 	const allElements = [...document.body.querySelectorAll('*')];
@@ -157,8 +162,11 @@
 				if (n) around.push(n);
 			}
 			const distances = around.map((c) => rectDistance(box, rectOf(c))).filter((d) => d > 0);
+			// The selector names the member at the top left of the group box; `parent` names the container.
+			const anchor = members.reduce((a, b) => (rectOf(b).left + rectOf(b).top < rectOf(a).left + rectOf(a).top ? b : a));
 			groups.push({
-				selector: selectorOf(parent),
+				selector: selectorOf(anchor),
+				parent: selectorOf(parent),
 				box: { x: Math.round(box.left + window.scrollX), y: Math.round(box.top + window.scrollY), w: Math.round(box.right - box.left), h: Math.round(box.bottom - box.top) },
 				signature: key,
 				count: members.length,

@@ -118,11 +118,12 @@ test('every reported selector resolves to an element at the reported box', opts,
 			const unresolved = await page.evaluate((items) => {
 				const bad = [];
 				for (const { selector, box } of items) {
-					const el = document.querySelector(selector);
+					const matches = document.querySelectorAll(selector);
+					const el = matches[0];
 					const r = el && el.getBoundingClientRect();
 					const same = r && Math.abs(r.left + scrollX - box.x) <= 1 && Math.abs(r.top + scrollY - box.y) <= 1;
-					// Group entries report the union of their members: the selector is the parent, so only existence counts there.
-					if (!el || (!same && !(el.contains(document.elementFromPoint(box.x, box.y)) || el.children.length > 1))) bad.push(selector);
+					// The selector resolves to one element that sits at the reported box.
+					if (matches.length !== 1 || !same) bad.push(`${selector} (${matches.length} matches)`);
 				}
 				return bad;
 			}, evidence.map(({ selector, box }) => ({ selector, box })));
