@@ -254,7 +254,7 @@ On screens the direct evidence is thin. One study found that spatial grouping an
 ### P1 Five-second rule
 **Principle.** After 5 seconds on the first viewport, a first-time visitor can name the type of site, say what it offers and for whom, and find the primary action.
 **Violation.** The visitor cannot name the site type, the offer or the audience, or does not find the action.
-**Check.** Follow [glance-test.md](glance-test.md). Run it on desktop and mobile separately. The 5 seconds are this rule set's own target. People recognise the category of a page at a glance (47 % correct after 120 ms against 10 % chance). Naming its purpose improves from 2 s to 10 s of viewing, and the first 10 seconds decide whether a visitor stays. The 5 seconds of the five-second test are convention.
+**Check.** Follow `glance-test.md` (in the design-audit skill, `references/`). Run it on desktop and mobile separately. The 5 seconds are this rule set's own target. People recognise the category of a page at a glance (47 % correct after 120 ms against 10 % chance). Naming its purpose improves from 2 s to 10 s of viewing, and the first 10 seconds decide whether a visitor stays. The 5 seconds of the five-second test are convention.
 **Evidence.** convention (the test), own target (the rule). Source: [Smashing Magazine](https://smashingmagazine.com/2023/12/five-second-testing-case-study), [page category at a glance](https://pmc.ncbi.nlm.nih.gov/articles/PMC5945715/), [NN/g time on page](https://www.nngroup.com/articles/how-long-do-users-stay-on-web-pages/)
 
 ### P2 First viewport

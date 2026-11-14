@@ -21,25 +21,30 @@ A given design beats this skill's taste. With a CI or an existing design system,
 
 ## 1. Intake
 
-Find the design that already exists. Read `references/intake.md`. Check in this order: token files and CSS in the repo, the component library, a live site or dev server, a brand PDF (read as page images), screenshots. Also read `CLAUDE.md`, `AGENTS.md`, `README.md` and `docs/`.
+Find the design that already exists. Read `references/intake.md`. Check in this order: token files and CSS in the repo, the component library, a live site or dev server, a brand PDF (read as page images), screenshots. Also read `CLAUDE.md`, `AGENTS.md`, `README.md`, `docs/` and the code comments that describe design intent.
 
-- A live site or dev server: `node ${CLAUDE_SKILL_DIR}/scripts/extract-tokens.mjs <url>` prints observed tokens. It needs the dependencies of the design-audit skill.
+- A live site or dev server: `node ${CLAUDE_SKILL_DIR}/scripts/extract-tokens.mjs <url>` prints observed tokens. It needs the sibling folder `skills/design-audit` with its dependencies installed. It also lists variables used but never defined. Record them as gaps.
 - Nothing found: ask once for a CI, a token export or a reference site. If none exists, go to step 3 without a CI.
 
 ## 2. Record it in DESIGN.md
 
-Read `references/design-md.md`. Write each value with its source and status (specified, observed, estimated, derived). List gaps (what the design does not define) and conflicts (where sources disagree or a brand value fails a rule). If a DESIGN.md exists, read it and extend it. Do not replace it.
+Read `references/design-md.md`. Write each value with its source and status (specified, observed, estimated, derived). List gaps (what the design does not define) and conflicts (where sources disagree or a brand value fails a rule). If a DESIGN.md exists, read it and extend it. Do not replace it. Scope is the whole site. Page-level decisions go into the Decisions log.
 
 ## 3. Direction
 
 - With a CI: restate its intent in two or three sentences. List what it leaves open.
-- Without a CI: write a brief from the subject (audience, task, tone). Commit to a direction before code.
+- Write the five-line brief from `references/process.md` §1 into DESIGN.md. If the user gave none, ask for audience, task and content source first. Do not invent them.
+- Without a CI: derive the direction from the brief. Commit to it before code.
 - For type, colour, layout and imagery, ask "default or decision?" (K2). Keep a default only with a reason from the project.
 - Keep the structure conventional. Put distinctiveness into type, imagery, content and detail.
 
 ## 4. Tokens, then components
 
-Read `references/process.md`. Write the tokens first as CSS custom properties. Build components with all states: default, hover, focus-visible, active, disabled, loading, empty, error. Design desktop and mobile together in the same pass. Use real content. Never invent stats, logos or testimonials.
+Read `references/process.md`. Reuse existing components and patterns before you write new ones. With a complete token set, add no tokens. Otherwise write the missing tokens first as CSS custom properties.
+
+Where the repo has tests for comparable pages or components, write the new tests first, in the repo's own conventions. Extend its guard lists (axe, sitemap, navigation).
+
+Build components with the states that apply: default, hover, focus-visible, active, disabled, loading, empty, error. Drop the others and note why. Design desktop and mobile together in the same pass. Use real content. Never invent stats, logos or testimonials.
 
 For stack details (Svelte, Tailwind v4, shadcn-style kits, plain CSS), read `references/adapters.md`.
 
@@ -64,6 +69,9 @@ Check these while you build. The rule IDs refer to `references/principles.md`, w
 ## 6. Finish gate
 
 1. Look at the result in a browser at desktop (1440 px) and mobile (390 px) widths. Check hover, focus and the empty and error states.
+   - Check every state the page has: hover, focus-visible, active, disabled, loading, empty, error. Skip states that do not apply.
+   - With a browser automation tool: hover with the pointer, reach focus with Tab, press and hold for active, force the error (offline request, invalid input). Turn reduced motion on, so a screenshot does not catch a transition.
+   - Without one: add a temporary state switch (query parameter or constant) to the dev build. Remove it before you commit.
 2. Run the audit measurements against the local dev server:
 
    ```bash
@@ -71,7 +79,12 @@ Check these while you build. The rule IDs refer to `references/principles.md`, w
    ```
 
    This path exists only when the plugin is installed as a whole, with the dependencies set up (see the design-audit skill). Otherwise review screenshots at both widths against the step 5 checklist.
-3. Run the glance test on the first viewport, desktop and mobile. Show only the first-viewport screenshot to one or more fresh agents without context, or judge it yourself after a pause. Ask: what kind of site is this, what does it offer, for whom, what would you click first? "Cannot tell" is a valid answer. If the answer misses, fix the first viewport (P1, P2). If the design-audit skill is installed, follow its `glance-test.md`.
+3. Run the glance test on the first viewport, desktop and mobile. It is a simulation, not a user test.
+   - With the plugin installed, follow `${CLAUDE_PLUGIN_ROOT}/skills/design-audit/references/glance-test.md`.
+   - Otherwise do this. Spawn 3 fresh subagents per viewport. Give each only the screenshot (neutral file name, taken 2500 ms after load) and these questions: what do you remember, what kind of site is this, what does it offer, who is it for, what would you click first, what is unclear. "Cannot tell" is valid.
+   - Score site type and offer, audience and first action from 0 to 3 against the owner's purpose. An item passes when 2 of 3 observers score 2 or higher.
+   - Never answer the questions yourself. Without a subagent tool, mark P1 as not checked.
+   - If an item fails, fix the first viewport (P1, P2) and run the test again. Run it again after any later change to the first viewport.
 4. Fix what the gate finds inside the constraints of the design. If a fix would change a brand value, record a conflict instead.
 5. Run the project's own tests and guards (type check, lint, token and contrast tests).
 

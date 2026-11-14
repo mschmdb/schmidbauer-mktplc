@@ -13,6 +13,11 @@
 //
 // Limits: custom properties come from :root and html rules only (media queries that
 // match the viewport count). Theme scopes such as [data-theme='dark'] are not read.
+// Tailwind built-ins are dropped: --tw-* always; names of Tailwind's default theme
+// (TAILWIND_DEFAULT_PATTERN) only when declared inside `@layer theme` and not declared
+// anywhere else. A default that the project overrides inside @theme is dropped too; it is
+// listed in tailwindDefaultsOmitted. undefinedProperties lists var(--x) uses with no
+// declaration in any same-origin stylesheet or style attribute (--tw-* excluded).
 // Cross-origin stylesheets are skipped. Counts cover up to MAX_ELEMENTS elements.
 import { createRequire } from 'node:module';
 import { fileURLToPath } from 'node:url';
@@ -21,12 +26,20 @@ const MAX_ELEMENTS = 6000;
 const DESKTOP = { width: 1440, height: 900 };
 const MOBILE_DEVICE = 'iPhone 13';
 
+const SIZES = 'xs|sm|md|lg|xl|2xl|3xl|4xl|5xl|6xl|7xl|8xl|9xl';
+/** Names of Tailwind v4's default theme (sub-properties such as --text-xs--line-height included). */
+export const TAILWIND_DEFAULT_PATTERN = new RegExp(
+	`^--(?:default-[a-z-]+|font-(?:sans|serif|mono)(?:--[a-z-]+)?|font-weight-[a-z]+|text-(?:${SIZES})(?:--[a-z-]+)?|tracking-[a-z]+|leading-[a-z]+|radius-(?:${SIZES})|shadow-(?:2xs|${SIZES})|inset-shadow-(?:2xs|${SIZES})|drop-shadow-(?:${SIZES})|blur-(?:${SIZES})|perspective-[a-z]+|aspect-[a-z]+|ease-[a-z-]+|animate-[a-z]+|breakpoint-(?:${SIZES})|container-(?:3xs|2xs|${SIZES})|spacing|color-(?:red|orange|amber|yellow|lime|green|emerald|teal|cyan|sky|blue|indigo|violet|purple|fuchsia|pink|rose|slate|gray|zinc|neutral|stone|taupe|mauve|mist|olive)-\\d+|color-(?:black|white))$`
+);
+
 /**
  * @typedef {{ value: string, count: number }} Counted
  * @typedef {{ name: string, value: string }} CustomProperty
  * @typedef {{
  *   viewport: { width: number, height: number },
  *   customProperties: CustomProperty[],
+ *   tailwindDefaultsOmitted: string[],
+ *   undefinedProperties: { name: string, hasFallback: boolean }[],
  *   fontFamilies: Counted[], fontSizes: Counted[], fontWeights: Counted[], lineHeights: Counted[],
  *   textColors: Counted[], backgroundColors: Counted[], spacing: Counted[],
  *   radii: Counted[], shadows: Counted[], elementsScanned: number
@@ -60,7 +73,8 @@ export function topValues(map) {
 }
 
 /** Runs inside the page. Returns plain arrays of [value, count] pairs. */
-function collectInPage(maxElements) {
+function collectInPage([maxElements, defaultSource]) {
+	const defaultPattern = new RegExp(defaultSource);
 	const counters = {
 		fontFamilies: new Map(), fontSizes: new Map(), fontWeights: new Map(), lineHeights: new Map(),
 		textColors: new Map(), backgroundColors: new Map(), spacing: new Map(), radii: new Map(), shadows: new Map()
@@ -95,26 +109,50 @@ function collectInPage(maxElements) {
 	}
 
 	const names = new Set();
-	const readRules = (rules) => {
+	const layered = new Set();
+	const readRules = (rules, inThemeLayer) => {
 		for (const rule of rules) {
 			if (rule.media && !matchMedia(rule.media.mediaText).matches) continue;
 			if (rule.selectorText !== undefined) {
 				const onRoot = rule.selectorText.split(',').some((sel) => ['html', ':root'].includes(sel.trim()));
 				if (!onRoot) continue;
-				for (const name of rule.style) if (name.startsWith('--')) names.add(name);
+				for (const name of rule.style) {
+					if (!name.startsWith('--')) continue;
+					names.add(name);
+					if (inThemeLayer) layered.add(name);
+				}
 			} else if (rule.cssRules) {
-				readRules(rule.cssRules);
+				readRules(rule.cssRules, inThemeLayer || (rule.constructor.name === 'CSSLayerBlockRule' && rule.name === 'theme'));
 			}
 		}
 	};
+	const cssTexts = [...document.querySelectorAll('[style]')].map((el) => el.getAttribute('style'));
 	for (const sheet of document.styleSheets) {
-		try { readRules(sheet.cssRules); } catch { /* cross-origin stylesheet */ }
+		try {
+			readRules(sheet.cssRules, false);
+			for (const rule of sheet.cssRules) cssTexts.push(rule.cssText);
+		} catch { /* cross-origin stylesheet */ }
+	}
+	const declaredAnywhere = new Set();
+	const used = new Map();
+	for (const text of cssTexts) {
+		for (const m of text.matchAll(/(--[\w-]+)\s*:/g)) declaredAnywhere.add(m[1]);
+		for (const m of text.matchAll(/@property\s+(--[\w-]+)/g)) declaredAnywhere.add(m[1]);
+		for (const m of text.matchAll(/var\(\s*(--[\w-]+)\s*(,?)/g)) used.set(m[1], (used.get(m[1]) ?? false) || m[2] === ',');
 	}
 	const rootStyle = getComputedStyle(document.documentElement);
-	const customProperties = [...names].map((name) => ({ name, value: rootStyle.getPropertyValue(name).trim() }));
+	const undefinedProperties = [...used]
+		.filter(([name]) => !name.startsWith('--tw-') && !declaredAnywhere.has(name) && rootStyle.getPropertyValue(name).trim() === '')
+		.map(([name, hasFallback]) => ({ name, hasFallback }));
+
+	const isBuiltIn = (name) => name.startsWith('--tw-') || (layered.has(name) && defaultPattern.test(name));
+	const tailwindDefaultsOmitted = [...names].filter(isBuiltIn);
+	const customProperties = [...names].filter((n) => !isBuiltIn(n)).map((name) => ({ name, value: rootStyle.getPropertyValue(name).trim() }));
 
 	return {
 		customProperties,
+		tailwindDefaultsOmitted,
+		undefinedProperties,
 		scanned,
 		counters: Object.fromEntries(Object.entries(counters).map(([k, m]) => [k, [...m.entries()]]))
 	};
@@ -126,11 +164,13 @@ function collectInPage(maxElements) {
  * @returns {Promise<ViewportTokens>}
  */
 async function readViewport(page, viewport) {
-	const data = await page.evaluate(collectInPage, MAX_ELEMENTS);
+	const data = await page.evaluate(collectInPage, [MAX_ELEMENTS, TAILWIND_DEFAULT_PATTERN.source]);
 	const list = (key) => topValues(new Map(data.counters[key]));
 	return {
 		viewport,
 		customProperties: data.customProperties,
+		tailwindDefaultsOmitted: data.tailwindDefaultsOmitted,
+		undefinedProperties: data.undefinedProperties,
 		fontFamilies: list('fontFamilies'), fontSizes: list('fontSizes'),
 		fontWeights: list('fontWeights'), lineHeights: list('lineHeights'),
 		textColors: list('textColors'), backgroundColors: list('backgroundColors'),
