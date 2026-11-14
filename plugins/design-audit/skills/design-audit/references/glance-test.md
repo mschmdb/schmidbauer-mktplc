@@ -96,7 +96,7 @@ Recommend a real five-second test with people from the target audience when:
 - an item fails
 - the page matters commercially
 
-Do not name a participant number as fact. Tool vendors recommend between 5 and 30 depending on the question (unverified: not in research.md, so state it as vendor advice).
+Do not name a participant number as fact. Tool vendors recommend between 5 and 30 participants depending on the question ([Lyssna](https://lyssna.com/guides/five-second-testing): 5 to 10; [Koji](https://www.koji.so/docs/five-second-test-questions): 15 to 30).
 
 ## 10. Result in the report
 

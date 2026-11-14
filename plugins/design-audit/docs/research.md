@@ -177,6 +177,8 @@ Not supported, report as observation only:
 | The first 10 seconds decide whether a visitor stays | 205,873 pages | R | V | https://www.nngroup.com/articles/how-long-do-users-stay-on-web-pages/ |
 | Naming a page's purpose improves from 2 s to 10 s of viewing. The 5 seconds of the five-second test are convention. | – | C | V (secondary) | https://smashingmagazine.com/2023/12/five-second-testing-case-study |
 
+Sample size for a real five-second test, vendor advice (C, V): 5 to 10 participants (https://lyssna.com/guides/five-second-testing), 15 to 30 (https://www.koji.so/docs/five-second-test-questions).
+
 What these studies do not show: they measure appeal and rated credibility on desktop screenshots, mostly with students. None measures comprehension, task success or mobile.
 
 **Rule that follows (own target, not a finding):** after 5 seconds on the first viewport, a first-time visitor can name the type of site, say what it offers and for whom, and find the primary action. Checked separately on desktop and mobile.
