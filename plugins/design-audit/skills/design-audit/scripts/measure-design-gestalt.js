@@ -169,8 +169,114 @@
 		}
 	}
 
+	// ---- edge detection shared by similarity and common region ----
+	const px = (value) => parseFloat(value);
+	const isTransparent = (c) => c === 'transparent' || /(,\s*|\/\s*)0(\.0+)?%?\)$/.test(c);
+	const bgCache = new WeakMap();
+	// Nearest ancestor background that is not transparent; white canvas when none.
+	const effectiveBg = (el) => {
+		if (!el) return 'rgb(255, 255, 255)';
+		if (bgCache.has(el)) return bgCache.get(el);
+		const own = cs(el).backgroundColor;
+		const result = isTransparent(own) ? effectiveBg(el.parentElement) : own;
+		bgCache.set(el, result);
+		return result;
+	};
+	const SIDES = ['Top', 'Right', 'Bottom', 'Left'];
+	// A box has a visible edge when a real border, a shadow or a fill that differs from its surroundings draws it.
+	const hasVisibleEdge = (el) => {
+		const s = cs(el);
+		const border = SIDES.some((side) => px(s[`border${side}Width`]) > 0 && s[`border${side}Style`] !== 'none' && !isTransparent(s[`border${side}Color`]));
+		const fill = !isTransparent(s.backgroundColor) && s.backgroundColor !== effectiveBg(el.parentElement);
+		return s.boxShadow !== 'none' || border || fill;
+	};
+
+	// ---- similarity (G2, S5): style signatures per role ----
+	const MAX_ROLE_ELEMENTS = 300; // elements inspected per role
+	const MAX_SIGNATURES = 12; // distinct signatures reported per role
+	const borderOf = (s) => (px(s.borderTopWidth) > 0 && s.borderTopStyle !== 'none' ? `${s.borderTopWidth} ${s.borderTopStyle} ${s.borderTopColor}` : 'none');
+	const signatureOf = (e) => {
+		const s = cs(e);
+		return { fontSize: s.fontSize, fontWeight: s.fontWeight, color: s.color, background: s.backgroundColor, border: borderOf(s), radius: s.borderRadius, shadow: s.boxShadow, padding: s.padding };
+	};
+	const roleVariants = (elements) => {
+		const groups = new Map();
+		for (const e of elements.slice(0, MAX_ROLE_ELEMENTS)) {
+			const signature = signatureOf(e);
+			const key = JSON.stringify(signature);
+			const group = groups.get(key) || { signature, count: 0, sample: { selector: selectorOf(e), box: boxOf(e) } };
+			group.count += 1;
+			groups.set(key, group);
+		}
+		return [...groups.values()].sort((a, b) => b.count - a.count).slice(0, MAX_SIGNATURES);
+	};
+	// Link inside a sentence: the parent holds text beyond its links (nav bars and link lists do not).
+	const bare = (text) => text.replace(/\s+/g, '').length;
+	const isInlineInText = (e) => {
+		const parent = e.parentElement;
+		if (cs(e).display !== 'inline' || !parent) return false;
+		const linkText = [...parent.querySelectorAll('a')].reduce((n, a) => n + bare(a.textContent), 0);
+		return bare(parent.textContent) - linkText > 0;
+	};
+	// A link styled as a button: not inline, with a visible edge (fill or border) and vertical padding of at least 6 px.
+	const looksLikeButtonLink = (e) =>
+		e.tagName === 'A' && e.hasAttribute('href') && cs(e).display !== 'inline' && px(cs(e).paddingTop) >= 6 && hasVisibleEdge(e);
+	const isCard = (e) => ['ARTICLE', 'LI', 'DIV'].includes(e.tagName) && px(cs(e).borderRadius) >= 6 && hasVisibleEdge(e) && e.getBoundingClientRect().height > 120;
+	const roles = {
+		buttons: roleVariants(vis.filter((e) => e.matches('button, [role=button], input[type=submit], input[type=button]') || looksLikeButtonLink(e))),
+		links: roleVariants(vis.filter((e) => e.tagName === 'A' && e.hasAttribute('href') && isInlineInText(e))),
+		cards: roleVariants(vis.filter(isCard))
+	};
+	for (const level of [1, 2, 3, 4, 5, 6]) roles[`h${level}`] = roleVariants(vis.filter((e) => e.tagName === `H${level}`));
+
+	// Rounded boxes (radius above 0, a visible edge, at least 16 x 16 px) and every shadow, counted by value.
+	const radii = {};
+	const shadows = {};
+	for (const e of vis) {
+		const s = cs(e);
+		if (s.boxShadow !== 'none') add(shadows, s.boxShadow, 1);
+		if (px(s.borderRadius) > 0 && hasVisibleEdge(e)) {
+			const r = e.getBoundingClientRect();
+			if (r.width >= 16 && r.height >= 16) add(radii, s.borderRadius, 1);
+		}
+	}
+
+	// ---- common region (G3): nesting depth of containers with a visible edge ----
+	// A container has a visible edge, is not inline, is at least 48 x 32 px, and is not a control, link or media element.
+	// Depth = containers on the way from the element up to <body>, itself included.
+	const REGION_EXCLUDED = /^(HTML|BODY|A|BUTTON|INPUT|SELECT|TEXTAREA|SUMMARY|IMG|SVG|VIDEO|CANVAS|PICTURE|IFRAME)$/;
+	const DEEP_FROM = 3; // containers at this depth or deeper are listed
+	const MAX_DEEP_LISTED = 10;
+	const regionCache = new WeakMap();
+	const isRegion = (e) => {
+		if (regionCache.has(e)) return regionCache.get(e);
+		const r = e.getBoundingClientRect();
+		const result = !REGION_EXCLUDED.test(e.tagName) && cs(e).display !== 'inline' && r.width >= 48 && r.height >= 32 && hasVisibleEdge(e);
+		regionCache.set(e, result);
+		return result;
+	};
+	const depthCache = new WeakMap();
+	const depthOf = (e) => {
+		if (!e || e === document.body || e === document.documentElement) return 0;
+		if (depthCache.has(e)) return depthCache.get(e);
+		const depth = (isRegion(e) ? 1 : 0) + depthOf(e.parentElement);
+		depthCache.set(e, depth);
+		return depth;
+	};
+	const distribution = {};
+	const deepRegions = [];
+	for (const e of vis) {
+		if (!isRegion(e)) continue;
+		const depth = depthOf(e);
+		add(distribution, depth, 1);
+		if (depth >= DEEP_FROM) deepRegions.push({ selector: selectorOf(e), box: boxOf(e), depth });
+	}
+	const deep = deepRegions.sort((a, b) => b.depth - a.depth).slice(0, MAX_DEEP_LISTED);
+
 	return {
 		limits: { total: allElements.length, scanned: scanned.length, capped: allElements.length > MAX_ELEMENTS },
-		proximity: { headings, labels, groups }
+		proximity: { headings, labels, groups },
+		similarity: { roles, radii, shadows },
+		region: { distribution, deep }
 	};
 })();

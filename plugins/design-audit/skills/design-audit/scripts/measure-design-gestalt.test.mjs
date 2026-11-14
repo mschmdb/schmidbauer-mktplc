@@ -43,3 +43,35 @@ test('proximity: a heading that starts its container has no gap above', opts, as
 	assert.equal(h1.gapAbove, null);
 	assert.equal(h1.gapBelow, 24);
 });
+
+test('similarity: three button styles show up as three variants that differ in radius, fill and weight', opts, async () => {
+	const { deriveSimilarity } = await import('./lib/similarity.mjs');
+	const s = deriveSimilarity((await measureDesignFixture('design-gestalt-violations.html')).similarity);
+	assert.equal(s.roles.buttons.total, 3);
+	assert.equal(s.roles.buttons.distinct, 3);
+	for (const prop of ['radius', 'background', 'fontWeight', 'shadow']) assert.ok(s.roles.buttons.differsIn.includes(prop), prop);
+	assert.ok(s.roles.buttons.variants[0].sample.selector.length > 0);
+});
+
+test('similarity: clean fixture has consistent cards, links and headings; radii and shadows are counted', opts, async () => {
+	const { deriveSimilarity } = await import('./lib/similarity.mjs');
+	const s = deriveSimilarity((await measureDesignFixture('design-clean.html')).similarity);
+	assert.equal(s.roles.cards.distinct, 1, 'three cards, one style');
+	assert.equal(s.roles.cards.total, 3);
+	assert.equal(s.roles.h2.distinct, 1);
+	assert.equal(s.roles.links.total, 1, 'only the link inside the sentence');
+	assert.equal(s.roles.buttons.total, 3, 'primary, secondary and submit');
+	assert.ok(s.radii.distinct >= 1 && s.radii.top.value === '8px');
+	assert.equal(s.shadows.distinct, 0);
+});
+
+test('region: the four nested bordered boxes give depth 4, the clean page at most 2', opts, async () => {
+	const { deriveRegion } = await import('./lib/similarity.mjs');
+	const bad = deriveRegion((await measureDesignFixture('design-gestalt-violations.html')).region);
+	assert.equal(bad.maxDepth, 4);
+	assert.equal(bad.deep[0].depth, 4);
+	assert.equal(bad.deep[0].selector, '#deep4');
+	const clean = deriveRegion((await measureDesignFixture('design-clean.html')).region);
+	assert.equal(clean.maxDepth, 2);
+	assert.deepEqual(clean.deep, []);
+});
