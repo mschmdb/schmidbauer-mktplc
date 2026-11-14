@@ -132,6 +132,10 @@
 		};
 	};
 
+	// Text elements visible in the first viewport, in DOM order (up to 300): lib/late-content.mjs compares them with snapshot-first-viewport.js.
+	const MAX_VISIBLE_TEXT = 300;
+	const visibleText = firstText.slice(0, MAX_VISIBLE_TEXT).map((e) => ({ selector: selectorOf(e), label: label(e), box: boxOf(e) }));
+
 	// ---- hierarchy (H1): filled, primary-looking buttons in the first viewport ----
 	// Visible, at least 24 px high, with a background of alpha above 0 that differs from the surrounding background.
 	const MAX_BUTTONS = 20;
@@ -333,7 +337,7 @@
 	return {
 		limits: { total: allElements.length, scanned: scanned.length, capped: allElements.length > MAX_ELEMENTS },
 		hierarchy: { primaryButtons },
-		firstViewport: { width: VW, height: VH, h1, weights, media, overlays, textOverImage },
+		firstViewport: { width: VW, height: VH, h1, weights, media, overlays, textOverImage, visibleText },
 		prominence: { candidates: prominenceCandidates },
 		tells: { gradientText, backdropBlur, emojiIcons, identicalCardGroups, gradientBackgrounds, generator, builders }
 	};

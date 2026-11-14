@@ -113,3 +113,25 @@ test('tells: clean fixture shows none of the new tells', opts, async () => {
 	assert.deepEqual(t.builderFingerprints.matched, []);
 	assert.equal(t.defaultFontsOnly, false);
 });
+
+test('late content: a heading revealed after 1500 ms is reported against the 1000 ms snapshot', opts, async () => {
+	const { finishDesign } = await import('./lib/design.mjs');
+	const { withFixture } = await import('./browser-helpers.mjs');
+	const { runDesignScripts } = await import('./design-scripts.mjs');
+	const { readFileSync } = await import('node:fs');
+	const snapshotSource = readFileSync(new URL('./snapshot-first-viewport.js', import.meta.url), 'utf8');
+	await withFixture('late-content.html', async (page) => {
+		await page.waitForTimeout(1000);
+		const earlySnapshot = await page.evaluate(snapshotSource);
+		await page.waitForTimeout(900);
+		const { design } = finishDesign(await runDesignScripts(page), { earlySnapshot });
+		const late = design.firstViewport.lateContent;
+		assert.equal(late.referenceMs, 1000);
+		assert.equal(late.count, 1);
+		assert.equal(late.items[0].label, 'Revealed after 1500 ms');
+		assert.equal(late.items[0].selector, '#late');
+		assert.ok(late.items[0].box.w > 0);
+		const noSnapshot = finishDesign(await runDesignScripts(page)).design.firstViewport.lateContent;
+		assert.equal(noSnapshot, null);
+	}, viewport);
+});

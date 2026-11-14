@@ -16,6 +16,7 @@ import { finishDesign } from './lib/design.mjs';
 import { runDesignScripts } from './design-scripts.mjs';
 import { pixelReport } from './pixels.mjs';
 import { scrollWholePage, waitForSettled } from './page-prep.mjs';
+import { LATE_REFERENCE_MS } from './lib/late-content.mjs';
 
 const FRAME_TIMES_MS = [300, 1000, 2500];
 const MOBILE_DEVICE = 'iPhone 13';
@@ -29,6 +30,7 @@ mkdirSync(out, { recursive: true });
 
 const here = dirname(fileURLToPath(import.meta.url));
 const measureSource = readFileSync(join(here, 'measure.js'), 'utf8');
+const snapshotSource = readFileSync(join(here, 'snapshot-first-viewport.js'), 'utf8');
 const measure = async (page) => finishMeasure(await page.evaluate(measureSource));
 
 // Screenshots use CSS pixels: a 3x device would otherwise exceed Chromium's image size limit on long pages.
@@ -65,6 +67,7 @@ async function auditViewport(browser, name, contextOptions, notes) {
 		// Animation frames from first paint, before the page has settled. `atMs` is the real capture time.
 		const start = Date.now();
 		let loadEventMs = null;
+		let earlySnapshot = null;
 		page.once('load', () => {
 			loadEventMs = Date.now() - start;
 		});
@@ -73,6 +76,8 @@ async function auditViewport(browser, name, contextOptions, notes) {
 		const domContentLoadedMs = Date.now() - start;
 		for (const t of FRAME_TIMES_MS) {
 			await page.waitForTimeout(Math.max(0, t - (Date.now() - start)));
+			// Light snapshot of the visible first-viewport text at the reference frame; the final measurement is diffed against it.
+			if (t === LATE_REFERENCE_MS) earlySnapshot = await page.evaluate(snapshotSource).catch(() => null);
 			const file = `${name}-t${t}.png`;
 			await shot(page, file);
 			result.frames.push({ file, targetMs: t, atMs: Date.now() - start });
@@ -123,7 +128,7 @@ async function auditViewport(browser, name, contextOptions, notes) {
 		result.measure = await measure(page);
 		// Design measurements and the first-viewport pixels run at scroll position 0, before the focus walk moves the page.
 		try {
-			const { design, tells } = finishDesign(await runDesignScripts(page));
+			const { design, tells } = finishDesign(await runDesignScripts(page), { earlySnapshot });
 			result.design = design;
 			result.measure.tells = { ...result.measure.tells, ...tells };
 		} catch (error) {
