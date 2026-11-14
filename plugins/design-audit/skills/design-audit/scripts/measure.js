@@ -12,6 +12,25 @@
 	const textEls = [...document.querySelectorAll('body *')].filter(
 		(el) => visible(el) && [...el.childNodes].some((n) => n.nodeType === 3 && n.textContent.trim())
 	);
+	const isTransparent = (c) => c === 'transparent' || /(,\s*|\/\s*)0(\.0+)?%?\)$/.test(c);
+	// Nearest ancestor background that is not transparent; the canvas is white by default.
+	const effectiveBg = (el) => {
+		for (let n = el; n; n = n.parentElement) {
+			const bg = cs(n).backgroundColor;
+			if (!isTransparent(bg)) return bg;
+		}
+		return 'rgb(255, 255, 255)';
+	};
+	// A box looks like a card only when something draws its edge: shadow, a real border, or its own fill.
+	// Tailwind preflight sets `border: 0 solid`, so border-style alone says nothing.
+	const hasVisibleEdge = (el) => {
+		const s = cs(el);
+		const border = ['Top', 'Right', 'Bottom', 'Left'].some(
+			(side) => parseFloat(s[`border${side}Width`]) > 0 && s[`border${side}Style`] !== 'none' && !isTransparent(s[`border${side}Color`])
+		);
+		const fill = !isTransparent(s.backgroundColor) && s.backgroundColor !== effectiveBg(el.parentElement);
+		return s.boxShadow !== 'none' || border || fill;
+	};
 	const count = (arr) => arr.reduce((m, k) => ((m[k] = (m[k] || 0) + 1), m), {});
 
 	const fonts = count(textEls.map((e) => cs(e).fontFamily.split(',')[0]));
@@ -83,7 +102,7 @@
 			return (
 				visible(e) &&
 				parseFloat(s.borderRadius) >= 6 &&
-				(s.boxShadow !== 'none' || s.borderStyle !== 'none') &&
+				hasVisibleEdge(e) &&
 				e.getBoundingClientRect().height > 120
 			);
 		}).length
