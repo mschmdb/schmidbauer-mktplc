@@ -239,10 +239,93 @@
 		.sort((a, b) => b.area - a.area)
 		.slice(0, MAX_CANDIDATES);
 
+	// ---- tells of the generic look (K2): counts and examples, no verdicts ----
+	const MAX_EXAMPLES = 5;
+	const example = (e) => ({ selector: selectorOf(e), box: boxOf(e), text: label(e).slice(0, 40) });
+	const listed = (elements) => ({ count: elements.length, examples: elements.slice(0, MAX_EXAMPLES).map(example) });
+
+	// Gradient text: `background-clip: text` with a transparent text colour or fill.
+	const gradientText = listed(
+		textEls.filter((e) => {
+			const s = cs(e);
+			const clip = s.backgroundClip || s.webkitBackgroundClip;
+			return clip === 'text' && (isTransparent(s.color) || isTransparent(s.webkitTextFillColor));
+		})
+	);
+	const backdropBlur = listed(vis.filter((e) => /blur/.test(cs(e).backdropFilter || cs(e).webkitBackdropFilter || '')));
+
+	// Emoji as leading icon: a list item or heading that starts with an emoji, or an emoji-only element that is the first
+	// element child of a parent with more content (the icon of a card).
+	const EMOJI = /^\p{Extended_Pictographic}/u;
+	const EMOJI_ONLY = /^(?:\p{Extended_Pictographic}️?\s*){1,3}$/u;
+	const emojiIcons = listed(
+		vis.filter((e) => {
+			const text = e.textContent.trim();
+			if (/^(LI|H[1-6])$/.test(e.tagName)) return EMOJI.test(text);
+			const parent = e.parentElement;
+			return !!parent && parent !== document.body && parent.firstElementChild === e && parent.children.length > 1 && EMOJI_ONLY.test(text);
+		})
+	);
+
+	// Groups of 3+ sibling boxes with a visible edge and identical tag skeletons (tag tree, 3 levels deep).
+	const MAX_CARD_GROUPS = 10;
+	const CARD_MIN = { width: 120, height: 80 };
+	const skeleton = (e, depth) => {
+		const kids = depth > 0 ? [...e.children].filter((c) => !NOT_RENDERED.has(c.tagName)) : [];
+		return e.tagName.toLowerCase() + (kids.length ? `(${kids.map((c) => skeleton(c, depth - 1)).join(',')})` : '');
+	};
+	const identicalCardGroups = [];
+	for (const parent of [document.body, ...vis]) {
+		if (identicalCardGroups.length >= MAX_CARD_GROUPS) break;
+		const bySkeleton = new Map();
+		for (const child of parent.children) {
+			if (!visSet.has(child)) continue;
+			const r = child.getBoundingClientRect();
+			if (r.width < CARD_MIN.width || r.height < CARD_MIN.height || !hasVisibleEdge(child)) continue;
+			const key = skeleton(child, 3);
+			bySkeleton.set(key, [...(bySkeleton.get(key) || []), child]);
+		}
+		for (const [key, members] of bySkeleton) {
+			if (members.length < 3 || identicalCardGroups.length >= MAX_CARD_GROUPS) continue;
+			const first = boxOf(members[0]);
+			const last = boxOf(members[members.length - 1]);
+			identicalCardGroups.push({
+				selector: selectorOf(parent),
+				box: { x: Math.min(first.x, last.x), y: Math.min(first.y, last.y), w: Math.max(first.x + first.w, last.x + last.w) - Math.min(first.x, last.x), h: Math.max(first.y + first.h, last.y + last.h) - Math.min(first.y, last.y) },
+				count: members.length,
+				skeleton: key
+			});
+		}
+	}
+
+	// Gradient backgrounds (not the fill of gradient text) and the colours inside them (hue families come from lib/tells.mjs).
+	const gradientEls = vis.filter((e) => /gradient\(/.test(cs(e).backgroundImage) && (cs(e).backgroundClip || cs(e).webkitBackgroundClip) !== 'text');
+	const gradientColours = [...new Set(gradientEls.flatMap((e) => cs(e).backgroundImage.match(/(?:rgba?|oklch|oklab|color)\([^)]*\)/g) || []))];
+	const gradientBackgrounds = { count: gradientEls.length, colours: gradientColours.slice(0, 8) };
+
+	// Builder fingerprints: report what exists. Attributes `data-framer*` and `data-wf-*` (up to 10 names, MAX_ELEMENTS scanned),
+	// hosts of scripts and links that contain lovable, v0, bolt or framer (up to 10), and the generator meta tag.
+	const generator = document.querySelector('meta[name="generator" i]')?.getAttribute('content') || null;
+	const attributeNames = new Set();
+	for (const e of [document.documentElement, document.body, ...scanned]) {
+		for (const attr of e.attributes) if (/^data-(framer|wf-)/.test(attr.name)) attributeNames.add(attr.name);
+	}
+	const hostNames = new Set();
+	for (const e of document.querySelectorAll('script[src], link[href]')) {
+		try {
+			const host = new URL(e.getAttribute('src') || e.getAttribute('href'), location.href).hostname;
+			if (/lovable|v0|bolt|framer/i.test(host)) hostNames.add(host);
+		} catch {
+			// A malformed URL carries no host to report.
+		}
+	}
+	const builders = { attributes: [...attributeNames].slice(0, 10), hosts: [...hostNames].slice(0, 10) };
+
 	return {
 		limits: { total: allElements.length, scanned: scanned.length, capped: allElements.length > MAX_ELEMENTS },
 		hierarchy: { primaryButtons },
 		firstViewport: { width: VW, height: VH, h1, weights, media, overlays, textOverImage },
-		prominence: { candidates: prominenceCandidates }
+		prominence: { candidates: prominenceCandidates },
+		tells: { gradientText, backdropBlur, emojiIcons, identicalCardGroups, gradientBackgrounds, generator, builders }
 	};
 })();

@@ -66,3 +66,42 @@ test('prominence: on the clean page the h1 leads and only the filled link counts
 	assert.equal(byLabel('Start a project').kind, 'button');
 	assert.equal(byLabel('See our work').kind, 'text', 'outlined: no fill');
 });
+
+test('tells: generic fixture shows gradient text, glass, emoji icons, identical cards and builder fingerprints', opts, async () => {
+	const { deriveTells } = await import('./lib/tells.mjs');
+	const { deriveTypography } = await import('./lib/typography.mjs');
+	const { deriveSimilarity } = await import('./lib/similarity.mjs');
+	const raw = await measureDesignFixture('design-generic-ai.html');
+	const t = deriveTells(raw.tells, { typography: deriveTypography(raw.typography), similarity: deriveSimilarity(raw.similarity) });
+	assert.equal(t.gradientText, 1);
+	assert.equal(t.gradientTextExamples[0].text, 'faster than ever');
+	assert.equal(t.backdropBlurElements, 1);
+	assert.equal(t.emojiIcons, 3);
+	assert.equal(t.identicalCardGroups.length, 1);
+	assert.equal(t.identicalCardGroups[0].count, 3);
+	assert.equal(t.gradientBackgrounds, 1);
+	assert.ok(t.gradientHues.some((h) => h >= 240 && h <= 330), `hues ${t.gradientHues}`);
+	assert.equal(t.mostCommonShadow.share, 1);
+	assert.ok(t.mostCommonRadius.share >= 0.4, `radius ${JSON.stringify(t.mostCommonRadius)}`);
+	assert.equal(t.generator, 'Framer');
+	assert.deepEqual(t.builderFingerprints.matched, ['framer', 'lovable']);
+	assert.ok(t.builderFingerprints.attributes.includes('data-framer-root'));
+	assert.deepEqual(t.builderFingerprints.hosts, ['app.lovable.dev']);
+	assert.equal(t.defaultFontsOnly, true);
+});
+
+test('tells: clean fixture shows none of the new tells', opts, async () => {
+	const { deriveTells } = await import('./lib/tells.mjs');
+	const { deriveTypography } = await import('./lib/typography.mjs');
+	const { deriveSimilarity } = await import('./lib/similarity.mjs');
+	const raw = await measureDesignFixture('design-clean.html');
+	const t = deriveTells(raw.tells, { typography: deriveTypography(raw.typography), similarity: deriveSimilarity(raw.similarity) });
+	assert.equal(t.gradientText, 0);
+	assert.equal(t.backdropBlurElements, 0);
+	assert.equal(t.emojiIcons, 0);
+	assert.deepEqual(t.identicalCardGroups, [], 'the third card has an extra box');
+	assert.equal(t.gradientBackgrounds, 0);
+	assert.equal(t.generator, null);
+	assert.deepEqual(t.builderFingerprints.matched, []);
+	assert.equal(t.defaultFontsOnly, false);
+});
