@@ -7,6 +7,7 @@ import { AxeBuilder } from '@axe-core/playwright';
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { focusWalk } from './focus-walk.mjs';
 
 const [url, out] = process.argv.slice(2);
 if (!url || !out) {
@@ -18,22 +19,6 @@ mkdirSync(out, { recursive: true });
 const here = dirname(fileURLToPath(import.meta.url));
 const measureSource = readFileSync(join(here, 'measure.js'), 'utf8');
 const measure = (page) => page.evaluate(measureSource);
-
-async function focusWalk(page, steps = 10) {
-	const seen = [];
-	for (let i = 0; i < steps; i++) {
-		await page.keyboard.press('Tab');
-		seen.push(
-			await page.evaluate(() => {
-				const e = document.activeElement;
-				const s = getComputedStyle(e);
-				const label = (e.getAttribute('aria-label') || e.textContent || '').trim().slice(0, 25);
-				return `${e.tagName} "${label}" outline=${s.outlineStyle} ${s.outlineWidth} ${s.outlineColor} shadow=${s.boxShadow !== 'none'}`;
-			})
-		);
-	}
-	return seen;
-}
 
 async function auditViewport(browser, name, viewport, result) {
 	const context = await browser.newContext({ viewport });
