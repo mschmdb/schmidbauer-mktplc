@@ -41,8 +41,10 @@ test('audit.mjs writes audit.json with desktop and mobile results and the PNG fi
 		assert.equal(code, 0);
 
 		const audit = JSON.parse(readFileSync(join(out, 'audit.json'), 'utf8'));
-		assert.deepEqual(Object.keys(audit).sort(), ['desktop', 'mobile', 'notes', 'url']);
+		assert.deepEqual(Object.keys(audit).sort(), ['desktop', 'incomplete', 'mobile', 'notes', 'url']);
 		assert.equal(audit.url, url);
+		assert.equal(audit.incomplete, false);
+		assert.deepEqual([audit.desktop.missing, audit.mobile.missing], [[], []]);
 		assert.deepEqual(Object.keys(audit.desktop).sort(), Object.keys(audit.mobile).sort());
 
 		for (const name of ['desktop', 'mobile']) {
@@ -80,6 +82,8 @@ test('audit.mjs exits with code 1 for an unreachable URL', { skip, timeout: 1800
 		assert.equal(code, 1);
 		const audit = JSON.parse(readFileSync(join(out, 'audit.json'), 'utf8'));
 		assert.equal(audit.desktop.measure, null);
+		assert.equal(audit.incomplete, true);
+		assert.ok(audit.desktop.missing.includes('measure'));
 		assert.ok(audit.notes.length > 0);
 	} finally {
 		rmSync(out, { recursive: true, force: true });

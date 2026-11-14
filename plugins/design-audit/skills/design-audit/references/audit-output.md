@@ -9,7 +9,8 @@ Boxes are `{x, y, w, h}` in CSS pixels, in document coordinates. Screenshots use
 | Field | Meaning | Rules |
 |---|---|---|
 | `url` | The audited URL. | |
-| `notes` | Problems during the run: unsettled page, scroll cap reached, a failed measurement. Anything listed is partial or "Not checked". | |
+| `incomplete` | `true` when a viewport never started or its `missing` list is not empty. Report the gaps as "Not checked". | |
+| `notes` | Problems during the run: unsettled page, scroll cap reached, a failed screenshot or measurement. Anything listed is partial or "Not checked". | |
 | `desktop`, `mobile` | One viewport object each, same keys. `null` if the viewport never started. | |
 
 ## Per viewport (`desktop`, `mobile`)
@@ -22,10 +23,11 @@ Boxes are `{x, y, w, h}` in CSS pixels, in document coordinates. Screenshots use
 | `status` | HTTP status of the load. 401, 403 or 429 means the measurements describe a wall. | |
 | `timing` | `domContentLoadedMs`, `loadMs`, `settledMs`, `fontsReady`, `domQuiet`. Settled means fonts ready and 500 ms without DOM change, capped at 8 s (own values). | M3, T8 |
 | `frames` | Load frames: `file`, `targetMs` (300, 1000, 2500), `atMs` (real capture time). | M1, M3, P2 |
-| `fullPage`, `scrollHeight` | Full-page screenshot name and document height. The page is scrolled once first so lazy content loads (cap 30 steps, own value). | |
+| `fullPage`, `scrollHeight` | Full-page screenshot name and document height. The page is scrolled once first so lazy content loads (cap 30 steps, own value). `fullPage` is `null` when the capture failed twice. | |
+| `missing` | Steps that failed: `fullPage`, `pixels`, `measure`, `design`, `focus`, `axe`, `frame t<ms>`, `scroll shot <y>`. Each capture is retried once after 500 ms (own value) and a failure never empties the other data. Empty when all steps worked. | |
 | `scrollShots` | Scroll series: `file`, `y`. Evenly spaced, top excluded, last at the bottom, at most 12 shots including the top (own value). Empty for a one-screen page. | M1, M3, G8 |
 | `measure` | Page measurements (next section). | |
-| `design` | Design measurements (see below). `null` if the run failed (see `notes`). | |
+| `design` | Design measurements (see below). `null` if the step failed (see `notes`, `missing`). | |
 | `pixels` | Pixel measures of the first viewport (see below). | |
 | `focus` | First 10 Tab stops (own value): `element`, `label`, `visible`, `via` (outline, box-shadow, border, background, color, underline, none). `visible: false` means no indicator differs from the unfocused style. | A1 |
 | `axe` | Desktop only, `null` on mobile. axe-core violations for WCAG 2.0 A and AA, 2.1 AA, 2.2 AA: `id`, `impact`, `nodes`, `help`, 3 `examples`. | A1 |
