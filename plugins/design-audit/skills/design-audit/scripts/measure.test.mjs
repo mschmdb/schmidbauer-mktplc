@@ -68,3 +68,15 @@ test('paragraphs measure text blocks: p, and li with running text only; headings
 	assert.ok(byId['#svg-li'].charsPerLineMax <= 61, `svg text is not a line of the item: ${byId['#svg-li'].charsPerLineMax}`);
 	assert.equal(byId['#body-p'].text.startsWith('Running text'), true);
 });
+
+test('touchTargets lists every target under 44 x 44 CSS px, smallest first, with the same exemptions as smallTargets', opts, async () => {
+	const m = await measureFixture('targets.html');
+	assert.equal(m.touchTargets.min, 44);
+	assert.equal(m.touchTargets.total, 6, '3 icon buttons, 2 nav links and the 120 x 40 label of the hidden checkbox');
+	assert.deepEqual(m.touchTargets.items[0].box.w, 16);
+	const sizes = m.touchTargets.items.map((i) => i.box.w * i.box.h);
+	assert.deepEqual(sizes, [...sizes].sort((a, b) => a - b));
+	assert.ok(m.touchTargets.items.some((i) => i.label === 'Newsletter' && i.box.h === 40));
+	assert.ok(!m.touchTargets.items.some((i) => /terms/.test(i.label)), 'inline text link is exempt');
+	assert.ok(m.touchTargets.items.every((i) => i.selector && i.tag));
+});

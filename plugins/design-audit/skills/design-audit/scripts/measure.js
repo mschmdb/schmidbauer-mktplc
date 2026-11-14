@@ -193,6 +193,21 @@
 		}))
 	};
 
+	// Targets under 44 x 44 CSS px: Apple 44 pt, Material 48 dp, NN/g 1 cm (own value 44). Same exemptions as above, smallest area first.
+	// Read this list on the mobile viewport; on desktop it only shows what a touch screen would hit.
+	const TOUCH_MIN = 44;
+	const touch = rects.filter(({ r }) => r.width < TOUCH_MIN || r.height < TOUCH_MIN).sort((a, b) => a.r.width * a.r.height - b.r.width * b.r.height);
+	const touchTargets = {
+		min: TOUCH_MIN,
+		total: touch.length,
+		items: touch.slice(0, 25).map(({ el }) => ({
+			selector: selectorOf(el),
+			box: boxOf(el),
+			tag: el.tagName,
+			label: (el.getAttribute('aria-label') || el.textContent || '').trim().slice(0, 30)
+		}))
+	};
+
 	const headings = [...document.querySelectorAll('h1, h2, h3, h4')].map((e) => {
 		// Only visible parts that differ from the heading in color, style or weight.
 		const h = cs(e);
@@ -305,6 +320,7 @@
 		colors,
 		paragraphs,
 		smallTargets,
+		touchTargets,
 		headings: headings.map((h) => h.line),
 		tells,
 		hasMain: !!document.querySelector('main'),
