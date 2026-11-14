@@ -210,9 +210,12 @@
 	const contentText = contentLines.join('\n');
 
 	// First viewport (rule 16): what a visitor sees before scrolling or interacting.
+	// Configured size, not window.innerWidth: mobile emulation widens innerWidth (and height) when the page overflows sideways.
+	const vpWidth = window.__auditViewport?.width ?? document.documentElement.clientWidth;
+	const vpHeight = window.__auditViewport?.height ?? window.innerHeight;
 	const inFirstViewport = (e) => {
 		const r = e.getBoundingClientRect();
-		return visible(e) && r.top < window.innerHeight && r.bottom > 0 && r.left < window.innerWidth && r.right > 0;
+		return visible(e) && r.top < vpHeight && r.bottom > 0 && r.left < vpWidth && r.right > 0;
 	};
 	const snippet = (e) => (e.getAttribute('aria-label') || e.innerText || '').trim().replace(/\s+/g, ' ').slice(0, 80);
 	const firstViewportActions = [...document.querySelectorAll('a[href], button, [role=button], input[type=submit]')]
@@ -220,7 +223,7 @@
 		.map((e) => `${e.tagName} "${snippet(e)}"`)
 		.slice(0, 15);
 	const firstViewport = {
-		viewport: `${window.innerWidth}x${window.innerHeight}`,
+		viewport: `${vpWidth}x${vpHeight}`,
 		headings: [...document.querySelectorAll('h1, h2, h3')].filter(inFirstViewport).map(snippet),
 		text: [...document.querySelectorAll('p, li')]
 			.filter((e) => inFirstViewport(e) && e.textContent.trim().length > 20)

@@ -189,7 +189,7 @@
 			selector: selectorOf(e),
 			box: boxOf(e),
 			left: Math.round(innerLeft(e)),
-			right: Math.round(window.innerWidth - (r.right - px(s.paddingRight) - px(s.borderRightWidth)))
+			right: Math.round((window.__auditViewport?.width ?? document.documentElement.clientWidth) - (r.right - px(s.paddingRight) - px(s.borderRightWidth)))
 		};
 	});
 

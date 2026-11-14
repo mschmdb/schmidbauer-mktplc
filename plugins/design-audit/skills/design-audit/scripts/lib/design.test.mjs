@@ -13,6 +13,7 @@ const emptyRaw = () => ({
 	region: { distribution: {}, deep: [] },
 	colour: { text: {}, backgrounds: {}, interactive: [] },
 	hierarchy: { primaryButtons: [] },
+	overflow: { horizontal: false, documentWidth: 1440, viewportWidth: 1440, offenders: [] },
 	firstViewport: { width: 1440, height: 900, h1: { present: false, anywhere: false }, weights: [], media: { coveredShare: 0, items: [] }, overlays: [], textOverImage: [] },
 	prominence: { candidates: [] },
 	tells: {
@@ -28,7 +29,7 @@ const emptyRaw = () => ({
 
 test('finishDesign derives every part and moves tells out of the design object', () => {
 	const { design, tells } = finishDesign(emptyRaw());
-	assert.deepEqual(Object.keys(design).sort(), ['alignment', 'colour', 'firstViewport', 'hierarchy', 'limits', 'prominence', 'proximity', 'region', 'similarity', 'spacing', 'typography']);
+	assert.deepEqual(Object.keys(design).sort(), ['alignment', 'colour', 'firstViewport', 'hierarchy', 'limits', 'overflow', 'prominence', 'proximity', 'region', 'similarity', 'spacing', 'typography']);
 	assert.equal(design.tells, undefined);
 	assert.equal(tells.gradientText, 0);
 	assert.equal(tells.defaultFontsOnly, false);

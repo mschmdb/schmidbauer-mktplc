@@ -96,8 +96,9 @@
 	const label = (e) => (e.getAttribute('aria-label') || e.innerText || e.textContent || '').trim().replace(/\s+/g, ' ').slice(0, 60);
 
 	// ---- first viewport: what a visitor sees before scrolling ----
-	const VW = window.innerWidth;
-	const VH = window.innerHeight;
+	// Configured size, not window.innerWidth: mobile emulation widens innerWidth (and height) when the page overflows sideways.
+	const VW = window.__auditViewport?.width ?? document.documentElement.clientWidth;
+	const VH = window.__auditViewport?.height ?? window.innerHeight;
 	const clip = (r) => ({
 		left: Math.max(0, r.left),
 		top: Math.max(0, r.top),
@@ -334,9 +335,30 @@
 	}
 	const builders = { attributes: [...attributeNames].slice(0, 10), hosts: [...hostNames].slice(0, 10) };
 
+	// ---- overflow (S6): elements that reach past the intended viewport width ----
+	// Fixed boxes (off-canvas menus) and content inside overflow-x auto or scroll containers do not count.
+	const MAX_OFFENDERS = 8;
+	const inScroller = (e) => {
+		for (let a = e.parentElement; a && a !== document.documentElement; a = a.parentElement) {
+			if (/^(auto|scroll)$/.test(cs(a).overflowX)) return true;
+		}
+		return false;
+	};
+	const inFixed = (e) => {
+		for (let a = e; a && a !== document.documentElement; a = a.parentElement) if (cs(a).position === 'fixed') return true;
+		return false;
+	};
+	const overflowing = vis.filter((e) => e.getBoundingClientRect().right + window.scrollX > VW + 1 && !inScroller(e) && !inFixed(e));
+	const offenders = overflowing
+		.sort((a, b) => b.getBoundingClientRect().right - a.getBoundingClientRect().right)
+		.slice(0, MAX_OFFENDERS)
+		.map((e) => ({ selector: selectorOf(e), label: label(e), box: boxOf(e) }));
+	const overflow = { horizontal: docWidth > VW, documentWidth: docWidth, viewportWidth: VW, offenders };
+
 	return {
 		limits: { total: allElements.length, scanned: scanned.length, capped: allElements.length > MAX_ELEMENTS },
 		hierarchy: { primaryButtons },
+		overflow,
 		firstViewport: { width: VW, height: VH, h1, weights, media, overlays, textOverImage, visibleText },
 		prominence: { candidates: prominenceCandidates },
 		tells: { gradientText, backdropBlur, emojiIcons, identicalCardGroups, gradientBackgrounds, generator, builders }

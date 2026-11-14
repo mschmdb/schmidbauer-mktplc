@@ -40,7 +40,9 @@
 	const hasOwnText = (el) => [...el.childNodes].some((n) => n.nodeType === 3 && n.textContent.trim());
 	const inFirst = (el) => {
 		const r = el.getBoundingClientRect();
-		return Math.min(window.innerWidth, r.right) > Math.max(0, r.left) && Math.min(window.innerHeight, r.bottom) > Math.max(0, r.top);
+		const vw = window.__auditViewport?.width ?? document.documentElement.clientWidth;
+		const vh = window.__auditViewport?.height ?? window.innerHeight;
+		return Math.min(vw, r.right) > Math.max(0, r.left) && Math.min(vh, r.bottom) > Math.max(0, r.top);
 	};
 	const all = [...document.body.querySelectorAll('*')];
 	const scanned = all.slice(0, MAX_ELEMENTS).filter((e) => !NOT_RENDERED.has(e.tagName) && !e.ownerSVGElement);

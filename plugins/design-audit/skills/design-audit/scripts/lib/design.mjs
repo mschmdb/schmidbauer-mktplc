@@ -31,6 +31,7 @@ export function finishDesign(raw, { earlySnapshot = null } = {}) {
 			colour: deriveColour(raw.colour),
 			hierarchy: deriveHierarchy(raw.hierarchy),
 			firstViewport,
+			overflow: raw.overflow,
 			prominence: rankProminence(raw.prominence.candidates, { width: firstViewport.width, height: firstViewport.height })
 		},
 		tells: deriveTells(raw.tells, { typography, similarity })

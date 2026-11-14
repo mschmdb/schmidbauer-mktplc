@@ -3,6 +3,7 @@
 import { existsSync, readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { evaluateAtViewport } from './lib/viewport.mjs';
 
 const here = dirname(fileURLToPath(import.meta.url));
 
@@ -28,7 +29,7 @@ export function designScriptSources() {
  */
 export async function runDesignScripts(page) {
 	const parts = [];
-	for (const { file, source } of designScriptSources()) parts.push([file, await page.evaluate(source)]);
+	for (const { file, source } of designScriptSources()) parts.push([file, await evaluateAtViewport(page, source)]);
 	return mergeDesignParts(parts);
 }
 

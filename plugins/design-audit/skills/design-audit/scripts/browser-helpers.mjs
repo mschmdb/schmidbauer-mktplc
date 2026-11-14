@@ -5,6 +5,7 @@ import { readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { runDesignScripts } from './design-scripts.mjs';
+import { evaluateAtViewport } from './lib/viewport.mjs';
 
 const here = dirname(fileURLToPath(import.meta.url));
 export const measureSource = readFileSync(join(here, 'measure.js'), 'utf8');
@@ -67,7 +68,7 @@ export async function withFixture(name, fn, contextOptions = { viewport: { width
  * @returns {Promise<any>}
  */
 export function measureFixture(name, contextOptions) {
-	return withFixture(name, (page) => page.evaluate(measureSource), contextOptions);
+	return withFixture(name, (page) => evaluateAtViewport(page, measureSource), contextOptions);
 }
 
 /**

@@ -135,3 +135,58 @@ test('late content: a heading revealed after 1500 ms is reported against the 100
 		assert.equal(noSnapshot, null);
 	}, viewport);
 });
+
+const mobile = { viewport: { width: 390, height: 664 }, isMobile: true, hasTouch: true, deviceScaleFactor: 3 };
+
+test('overflow: mobile emulation widens innerWidth, so first-viewport data uses the configured size', opts, async () => {
+	const { withFixture, measureSource } = await import('./browser-helpers.mjs');
+	const { evaluateAtViewport } = await import('./lib/viewport.mjs');
+	const { runDesignScripts } = await import('./design-scripts.mjs');
+	await withFixture('overflow.html', async (page) => {
+		const inner = await page.evaluate(() => window.innerWidth);
+		assert.ok(inner > 390, `innerWidth ${inner} shows the widened layout viewport`);
+		const raw = await runDesignScripts(page);
+		assert.equal(raw.firstViewport.width, 390);
+		assert.equal(raw.firstViewport.height, 664);
+		assert.equal((await evaluateAtViewport(page, measureSource)).firstViewport.viewport, '390x664');
+	}, mobile);
+});
+
+test('overflow: reports offenders past the configured width and skips scroll containers and fixed boxes', opts, async () => {
+	const raw = await measureDesignFixture('overflow.html', mobile);
+	const o = raw.overflow;
+	assert.equal(o.horizontal, true);
+	assert.equal(o.viewportWidth, 390);
+	assert.ok(o.documentWidth >= 900);
+	assert.ok(o.offenders.length >= 1 && o.offenders.length <= 8);
+	assert.ok(o.offenders.some((x) => x.selector.includes('wide') && x.label.startsWith('A box') && x.box.w === 900));
+	assert.ok(o.offenders.every((x) => !x.selector.includes('track') && !/fixed|Off-canvas/.test(x.label)));
+});
+
+test('overflow: a clean fixture reports no horizontal overflow, and design.overflow reaches the derived tree', opts, async () => {
+	const { finishDesign } = await import('./lib/design.mjs');
+	const { withFixture } = await import('./browser-helpers.mjs');
+	const { runDesignScripts } = await import('./design-scripts.mjs');
+	await withFixture('design-clean.html', async (page) => {
+		const { design } = finishDesign(await runDesignScripts(page));
+		assert.equal(design.overflow.horizontal, false);
+		assert.deepEqual(design.overflow.offenders, []);
+		assert.equal(design.overflow.viewportWidth, 1280);
+	});
+});
+
+test('overflow: the offender list is capped at eight', opts, async () => {
+	const { withFixture } = await import('./browser-helpers.mjs');
+	const { runDesignScripts } = await import('./design-scripts.mjs');
+	await withFixture('overflow.html', async (page) => {
+		await page.evaluate(() => {
+			for (let i = 0; i < 20; i++) {
+				const d = document.createElement('div');
+				d.style.cssText = 'width:700px;height:10px';
+				d.textContent = `extra ${i}`;
+				document.body.append(d);
+			}
+		});
+		assert.equal((await runDesignScripts(page)).overflow.offenders.length, 8);
+	}, mobile);
+});

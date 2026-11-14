@@ -16,6 +16,7 @@ import { finishDesign } from './lib/design.mjs';
 import { runDesignScripts } from './design-scripts.mjs';
 import { pixelReport } from './pixels.mjs';
 import { scrollWholePage, waitForSettled } from './page-prep.mjs';
+import { evaluateAtViewport } from './lib/viewport.mjs';
 import { LATE_REFERENCE_MS } from './lib/late-content.mjs';
 
 const FRAME_TIMES_MS = [300, 1000, 2500];
@@ -31,7 +32,7 @@ mkdirSync(out, { recursive: true });
 const here = dirname(fileURLToPath(import.meta.url));
 const measureSource = readFileSync(join(here, 'measure.js'), 'utf8');
 const snapshotSource = readFileSync(join(here, 'snapshot-first-viewport.js'), 'utf8');
-const measure = async (page) => finishMeasure(await page.evaluate(measureSource));
+const measure = async (page) => finishMeasure(await evaluateAtViewport(page, measureSource));
 
 // Screenshots use CSS pixels: a 3x device would otherwise exceed Chromium's image size limit on long pages.
 const shot = (page, file, options = {}) => page.screenshot({ path: join(out, file), scale: 'css', ...options });
@@ -77,7 +78,7 @@ async function auditViewport(browser, name, contextOptions, notes) {
 		for (const t of FRAME_TIMES_MS) {
 			await page.waitForTimeout(Math.max(0, t - (Date.now() - start)));
 			// Light snapshot of the visible first-viewport text at the reference frame; the final measurement is diffed against it.
-			if (t === LATE_REFERENCE_MS) earlySnapshot = await page.evaluate(snapshotSource).catch(() => null);
+			if (t === LATE_REFERENCE_MS) earlySnapshot = await evaluateAtViewport(page, snapshotSource).catch(() => null);
 			const file = `${name}-t${t}.png`;
 			await shot(page, file);
 			result.frames.push({ file, targetMs: t, atMs: Date.now() - start });
