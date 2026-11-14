@@ -44,7 +44,7 @@ test('labels: flagged when another control is as near as, or nearer than, the ow
 	assert.equal(p.labels.items[0].ratio, 3);
 });
 
-test('groups: flagged only when inner gap is equal to or larger than outer gap; the ratio is reported, not thresholded', () => {
+test('groups: inner gap equal to or larger than outer gap makes a candidate, never a violation; the ratio is reported, not thresholded', () => {
 	const p = deriveProximity({
 		headings: [],
 		labels: [],
@@ -55,10 +55,10 @@ test('groups: flagged only when inner gap is equal to or larger than outer gap; 
 			{ selector: 'ul:nth-of-type(4)', box, signature: 'div.y', count: 3, inner: 20, outer: null }
 		]
 	});
-	assert.deepEqual(p.groups.violations.map((g) => g.selector), ['ul:nth-of-type(2)']);
+	assert.deepEqual(p.groups.candidates.map((g) => g.selector), ['ul:nth-of-type(2)']);
+	assert.equal(p.groups.violations, undefined);
 	assert.deepEqual(p.groups.items.map((g) => g.ratio), [1.5, 0.4, 1.05, null]);
-	assert.equal(p.violations.length, 1);
-	assert.equal(p.violations[0].kind, 'group');
+	assert.deepEqual(p.violations, []);
 });
 
 test('violations merge all kinds with a kind tag', () => {

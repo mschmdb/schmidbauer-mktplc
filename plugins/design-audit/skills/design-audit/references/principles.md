@@ -25,7 +25,7 @@ Wagemans et al. 2012 split the field into perceptual grouping and figure-ground 
 ### G1 Proximity
 **Principle.** Elements that sit closer together read as one group.
 **Violation.** A heading sits nearer to the block above than to its own text. A form label sits nearer to the previous field than to its own. Space between sibling groups equals the space inside them.
-**Check.** Heading: gap to the following block against gap to the preceding block. Form label: gap to its own field against gap to the neighbouring field. Sibling groups: inner gap against outer gap. Flag only when the inner gap is equal to or larger than the outer gap. Otherwise report the ratio. In dot lattices a ratio of about 1.5 made grouping unambiguous. Interfaces were not tested. Mobile: stacked layouts lose the side-by-side cue, so check the vertical gaps again.
+**Check.** Heading: gap to the following block against gap to the preceding block. Form label: gap to its own field against gap to the neighbouring field. Flag a heading or label only when it sits as close or closer to the wrong neighbour. Sibling groups: inner gap against outer gap. The script lists a group with an inner gap equal to or larger than the outer gap as a candidate only; nested lists and cards make this noisy, so confirm it on a crop. Otherwise report the ratio. In dot lattices a ratio of about 1.5 made grouping unambiguous. Interfaces were not tested. Mobile: stacked layouts lose the side-by-side cue, so check the vertical gaps again.
 **Evidence.** research. Source: [Wertheimer 1923](https://psychclassics.yorku.ca/Wertheimer/Forms/forms.htm), [Kubovy et al. 1998](https://pubmed.ncbi.nlm.nih.gov/9520318/), [NN/g proximity](https://www.nngroup.com/articles/gestalt-proximity/)
 
 ### G2 Similarity

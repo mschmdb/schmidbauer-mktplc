@@ -138,7 +138,7 @@ test('false-positive guard: the clean fixture fires no violation list', opts, as
 	assert.deepEqual(design.proximity.violations, []);
 	assert.deepEqual(design.proximity.headings.violations, []);
 	assert.deepEqual(design.proximity.labels.violations, []);
-	assert.deepEqual(design.proximity.groups.violations, []);
+	assert.deepEqual(design.proximity.groups.candidates, []);
 	assert.deepEqual(design.region.deep, []);
 	assert.equal(design.hierarchy.primaryButtons.count, 1);
 	assert.equal(design.firstViewport.weights.nearLargest.competing, false);
@@ -149,7 +149,7 @@ test('the violation fixture fires all three proximity lists and the generic fixt
 	const bad = finishDesign(await measureDesignFixture('design-gestalt-violations.html')).design;
 	assert.equal(bad.proximity.headings.violations.length, 1);
 	assert.equal(bad.proximity.labels.violations.length, 1);
-	assert.equal(bad.proximity.groups.violations.length, 1);
+	assert.equal(bad.proximity.groups.candidates.length, 1);
 	assert.equal(bad.region.maxDepth, 4);
 	const generic = finishDesign(await measureDesignFixture('design-generic-ai.html'));
 	assert.equal(generic.tells.defaultFontsOnly, true);

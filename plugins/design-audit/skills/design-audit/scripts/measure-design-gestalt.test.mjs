@@ -6,10 +6,10 @@ import { deriveProximity } from './lib/proximity.mjs';
 after(closeBrowser);
 const opts = { skip: skipReason };
 
-test('proximity: violation fixture flags heading, label and sibling group', opts, async () => {
+test('proximity: violation fixture flags heading and label; the sibling group is a candidate', opts, async () => {
 	const p = deriveProximity((await measureDesignFixture('design-gestalt-violations.html')).proximity);
 	const kinds = p.violations.map((v) => v.kind);
-	assert.deepEqual(kinds.sort(), ['group', 'heading', 'label']);
+	assert.deepEqual(kinds.sort(), ['heading', 'label']);
 	const heading = p.headings.violations[0];
 	assert.equal(heading.text, 'Pricing');
 	assert.equal(heading.gapAbove, 13, 'margins collapse to the larger 13 px');
@@ -18,7 +18,7 @@ test('proximity: violation fixture flags heading, label and sibling group', opts
 	assert.equal(label.text, 'Last name');
 	assert.equal(label.ownGap, 24);
 	assert.equal(label.otherGap, 4);
-	const group = p.groups.violations[0];
+	const group = p.groups.candidates[0];
 	assert.equal(group.count, 3);
 	assert.equal(group.inner, 40);
 	assert.equal(group.outer, 16);
@@ -92,7 +92,8 @@ test('colour: generic fixture has purple hues; clean fixture has one blue accent
 test('proximity: eyebrows, bylines, date lines, rules, page sections and one-row groups do not fire; a real violation still does', opts, async () => {
 	const p = deriveProximity((await measureDesignFixture('design-proximity-patterns.html')).proximity);
 	const found = p.violations.map((v) => (v.kind === 'heading' ? `heading ${v.text}` : `${v.kind} ${v.signature}`));
-	assert.deepEqual(found, ['heading Real violation', 'group div.rc']);
+	assert.deepEqual(found, ['heading Real violation']);
+	assert.deepEqual(p.groups.candidates.map((g) => g.signature), ['div.rc']);
 	const real = p.headings.items.find((h) => h.text === 'Real violation');
 	assert.equal(real.gapAbove, 12);
 	assert.equal(real.gapBelow, 40);

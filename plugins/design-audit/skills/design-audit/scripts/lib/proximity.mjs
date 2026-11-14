@@ -1,5 +1,7 @@
 // Proximity derivations (G1). The page returns raw gaps; this module computes ratios and violation lists.
-// A violation means inner >= outer (equal or worse). The 1.5 ratio from dot-lattice studies is NOT a threshold here:
+// A heading or label violation means the element sits closer to the wrong neighbour (equal or worse).
+// Sibling groups with inner >= outer are only candidates: real pages nest lists in cards and sections, and in three
+// test runs on real sites these flags were noise. The auditor checks a candidate on a crop before citing G1. The 1.5 ratio from dot-lattice studies is NOT a threshold here:
 // ratios are reported so the reader can judge.
 
 /**
@@ -14,7 +16,7 @@ export function ratio(numerator, divisor) {
 
 /**
  * @param {{ headings: any[], labels: any[], groups: any[] }} raw `proximity` object from measure-design-gestalt.js
- * @returns {{ headings: { items: any[], violations: any[] }, labels: { items: any[], violations: any[] }, groups: { items: any[], violations: any[] }, violations: any[] }}
+ * @returns {{ headings: { items: any[], violations: any[] }, labels: { items: any[], violations: any[] }, groups: { items: any[], candidates: any[] }, violations: any[] }}
  */
 export function deriveProximity(raw) {
 	// Heading: gap above (to previous block) over gap below (to following block). Under 1 means closer to the previous block.
@@ -29,7 +31,7 @@ export function deriveProximity(raw) {
 		ratio: ratio(l.otherGap, l.ownGap),
 		closerToOther: l.ownGap !== null && l.otherGap !== null && l.ownGap > 0 && l.ownGap >= l.otherGap
 	}));
-	// Group: outer gap over inner gap. Flagged when the inner gap is equal to or larger than the outer gap.
+	// Group: outer gap over inner gap. A candidate when the inner gap is equal to or larger than the outer gap.
 	const groups = raw.groups.map((g) => ({
 		...g,
 		ratio: ratio(g.outer, g.inner),
@@ -37,15 +39,14 @@ export function deriveProximity(raw) {
 	}));
 	const headingViolations = headings.filter((h) => h.closerToPrevious);
 	const labelViolations = labels.filter((l) => l.closerToOther);
-	const groupViolations = groups.filter((g) => g.innerNotSmaller);
+	const groupCandidates = groups.filter((g) => g.innerNotSmaller);
 	return {
 		headings: { items: headings, violations: headingViolations },
 		labels: { items: labels, violations: labelViolations },
-		groups: { items: groups, violations: groupViolations },
+		groups: { items: groups, candidates: groupCandidates },
 		violations: [
 			...headingViolations.map((v) => ({ kind: 'heading', rule: 'G1', ...v })),
-			...labelViolations.map((v) => ({ kind: 'label', rule: 'G1', ...v })),
-			...groupViolations.map((v) => ({ kind: 'group', rule: 'G1', ...v }))
+			...labelViolations.map((v) => ({ kind: 'label', rule: 'G1', ...v }))
 		]
 	};
 }
