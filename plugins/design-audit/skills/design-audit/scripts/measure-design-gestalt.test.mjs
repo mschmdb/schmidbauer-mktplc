@@ -88,3 +88,36 @@ test('colour: generic fixture has purple hues; clean fixture has one blue accent
 	assert.ok(clean.lightness.buttonBackground.n >= 1);
 	assert.ok(clean.accents[0].sample.selector.length > 0);
 });
+
+test('proximity: eyebrows, bylines, date lines, rules, page sections and one-row groups do not fire; a real violation still does', opts, async () => {
+	const p = deriveProximity((await measureDesignFixture('design-proximity-patterns.html')).proximity);
+	const found = p.violations.map((v) => (v.kind === 'heading' ? `heading ${v.text}` : `${v.kind} ${v.signature}`));
+	assert.deepEqual(found, ['heading Real violation', 'group div.rc']);
+	const real = p.headings.items.find((h) => h.text === 'Real violation');
+	assert.equal(real.gapAbove, 12);
+	assert.equal(real.gapBelow, 40);
+	const grid = p.groups.items.find((g) => g.signature === 'div.rc');
+	assert.deepEqual([grid.count, grid.rows, grid.inner, grid.outer], [4, 2, 40, 16]);
+});
+
+test('proximity: a kicker joins its heading; the gap above is measured from the kicker and decorative rules are skipped', opts, async () => {
+	const p = deriveProximity((await measureDesignFixture('design-proximity-patterns.html')).proximity);
+	const h1 = p.headings.items.find((h) => h.tag === 'H1');
+	assert.equal(h1.kicker.text, 'Maintained by one person since 2019');
+	assert.equal(h1.gapAbove, null, 'nothing above the byline');
+	assert.equal(h1.gapBelow, 32);
+	const date = p.headings.items.find((h) => h.text === 'Berlin in squares');
+	assert.equal(date.kicker.text, '7 November 2026');
+	const band = p.headings.items.find((h) => h.text === 'Reports that answer one question');
+	assert.equal(band.kicker.text, 'Patent intelligence');
+	assert.equal(band.gapBelow, 68, '16 px, a 4 px rule that is ignored, and 48 px');
+	const projects = p.headings.items.find((h) => h.text === 'Projects');
+	assert.equal(projects.kicker, null);
+});
+
+test('proximity: page sections are no sibling group, a single row needs three items and ignores its own row label', opts, async () => {
+	const p = deriveProximity((await measureDesignFixture('design-proximity-patterns.html')).proximity);
+	assert.equal(p.groups.items.some((g) => g.signature.startsWith('section')), false);
+	const row = p.groups.items.find((g) => g.signature === 'a');
+	assert.deepEqual([row.count, row.rows, row.inner, row.outer], [3, 1, 16, 40]);
+});

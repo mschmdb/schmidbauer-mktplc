@@ -73,30 +73,153 @@
 	};
 	// ---- end of shared prelude ----
 
-	// ---- proximity (G1) ----
-	// Raw gaps in px between rectangles. Ratios and violation lists are derived in lib/proximity.mjs.
+	// ---- edge detection shared by similarity and common region ----
+	const px = (value) => parseFloat(value);
+	const isTransparent = (c) => c === 'transparent' || /(,\s*|\/\s*)0(\.0+)?%?\)$/.test(c);
+	const bgCache = new WeakMap();
+	// Nearest ancestor background that is not transparent; white canvas when none.
+	const effectiveBg = (el) => {
+		if (!el) return 'rgb(255, 255, 255)';
+		if (bgCache.has(el)) return bgCache.get(el);
+		const own = cs(el).backgroundColor;
+		const result = isTransparent(own) ? effectiveBg(el.parentElement) : own;
+		bgCache.set(el, result);
+		return result;
+	};
+	const SIDES = ['Top', 'Right', 'Bottom', 'Left'];
+	// A box has a visible edge when a real border, a shadow or a fill that differs from its surroundings draws it.
+	const hasVisibleEdge = (el) => {
+		const s = cs(el);
+		const border = SIDES.some((side) => px(s[`border${side}Width`]) > 0 && s[`border${side}Style`] !== 'none' && !isTransparent(s[`border${side}Color`]));
+		const fill = !isTransparent(s.backgroundColor) && s.backgroundColor !== effectiveBg(el.parentElement);
+		return s.boxShadow !== 'none' || border || fill;
+	};
+
+	// ---- content boxes (G1) ----
+	// Proximity compares what a reader sees: text lines, media and controls. The padding box of a wrapper is not a content box.
+	// A box that draws its own edge (border, shadow, fill) counts with that edge, unless it spans the full page width (a band).
+	const MEDIA_SELECTOR = 'img, video, canvas, picture, svg, iframe';
+	const CONTROL_SELECTOR = 'button, input:not([type=hidden]), select, textarea';
+	const MIN_MEDIA_SIDE = 16; // smaller media are icons, not content boxes
 	const rectDistance = (a, b) => {
 		const dx = Math.max(0, a.left - b.right, b.left - a.right);
 		const dy = Math.max(0, a.top - b.bottom, b.top - a.bottom);
 		return Math.hypot(dx, dy);
 	};
+	const union = (rects) => ({
+		left: Math.min(...rects.map((r) => r.left)),
+		top: Math.min(...rects.map((r) => r.top)),
+		right: Math.max(...rects.map((r) => r.right)),
+		bottom: Math.max(...rects.map((r) => r.bottom))
+	});
+	const lineHeightOf = (style) => (style.lineHeight === 'normal' ? px(style.fontSize) * 1.2 : px(style.lineHeight));
+	const blockOfElement = (el) => {
+		let block = el;
+		while (block.parentElement && cs(block).display.startsWith('inline')) block = block.parentElement;
+		return block;
+	};
+	// A text rect covers the glyph area; the reader sees the line box. Grow it by the half-leading, then snap an edge that lies
+	// within half a line of its block's content edge onto it (font metrics round to whole pixels).
+	const lineBox = (r, style, element) => {
+		const lh = lineHeightOf(style);
+		const pad = Math.max(0, (lh - r.height) / 2);
+		const block = blockOfElement(element);
+		const br = block.getBoundingClientRect();
+		const bs = cs(block);
+		const contentTop = br.top + px(bs.paddingTop) + px(bs.borderTopWidth);
+		const contentBottom = br.bottom - px(bs.paddingBottom) - px(bs.borderBottomWidth);
+		let top = r.top - pad;
+		let bottom = r.bottom + pad;
+		if (Math.abs(top - contentTop) <= lh / 2) top = contentTop;
+		if (Math.abs(bottom - contentBottom) <= lh / 2) bottom = contentBottom;
+		return { left: r.left, right: r.right, top, bottom };
+	};
+	const shown = (el) => el.checkVisibility({ opacityProperty: true, visibilityProperty: true }) || cs(el).display === 'contents';
+	const contentCache = new WeakMap();
+	// Union of the text lines, media and controls inside an element, or null when it holds none (a rule, a spacer, a wrapper).
+	const contentRect = (root) => {
+		if (contentCache.has(root)) return contentCache.get(root);
+		const rects = [];
+		const walk = (node) => {
+			if (node.nodeType === 3) {
+				if (!node.data.trim() || !node.parentElement) return;
+				const range = document.createRange();
+				range.selectNodeContents(node);
+				const style = cs(node.parentElement);
+				for (const r of range.getClientRects()) if (r.width > 0 && r.height > 0) rects.push(lineBox(r, style, node.parentElement));
+				return;
+			}
+			if (node.nodeType !== 1 || NOT_RENDERED.has(node.tagName) || !shown(node)) return;
+			if (node.matches(`${MEDIA_SELECTOR}, ${CONTROL_SELECTOR}`)) {
+				const r = node.getBoundingClientRect();
+				if (r.width >= MIN_MEDIA_SIDE && r.height >= MIN_MEDIA_SIDE) rects.push(r);
+				return;
+			}
+			for (const child of node.childNodes) walk(child);
+		};
+		walk(root);
+		const result = rects.length ? union(rects) : null;
+		contentCache.set(root, result);
+		return result;
+	};
+	const BOX_MIN_SIDE = 24; // an empty box smaller than this is a rule or a dot, not a tile
+	const visualRect = (el) => {
+		const r = el.getBoundingClientRect();
+		const content = contentRect(el);
+		const boxed = hasVisibleEdge(el) && r.width < 0.95 * (window.__auditViewport?.width ?? document.documentElement.clientWidth);
+		return boxed && (content || (r.width >= BOX_MIN_SIDE && r.height >= BOX_MIN_SIDE)) ? r : content;
+	};
 	const inFlow = (e) => visSet.has(e) && !['absolute', 'fixed'].includes(cs(e).position);
+	// Nearest sibling in flow that has content; rules and spacers are skipped.
 	const neighbour = (el, direction) => {
-		for (let n = el[direction]; n; n = n[direction]) if (inFlow(n)) return n;
+		for (let n = el[direction]; n; n = n[direction]) if (inFlow(n) && visualRect(n)) return n;
 		return null;
 	};
 	const MAX_HEADINGS_LISTED = 40;
-	// Headings h1 to h4: gap to the previous and the next block in flow. null when there is none or the neighbour sits beside it.
+	const KICKER_MAX_CHARS = 60; // own value: a label, not a sentence
+	const KICKER_MAX_LINES = 2; // own value
+	// A kicker (eyebrow, byline, date line) is a short block directly above a heading that is smaller than it or set in capitals,
+	// and sits closer to the heading than to whatever is above it. Then it belongs to the heading.
+	const kickerOf = (heading, headingRect) => {
+		const k = neighbour(heading, 'previousElementSibling');
+		if (!k) return null;
+		const rect = visualRect(k);
+		const text = k.textContent.replace(/\s+/g, ' ').trim();
+		if (rect.bottom > headingRect.top + 1 || !text || text.length > KICKER_MAX_CHARS) return null;
+		const textStyle = cs([k, ...k.querySelectorAll('*')].find((e) => ownText(e)) || k);
+		const content = contentRect(k);
+		if ((content.bottom - content.top) / lineHeightOf(textStyle) > KICKER_MAX_LINES + 0.25) return null;
+		const smaller = px(textStyle.fontSize) < px(cs(heading).fontSize);
+		if (!smaller && textStyle.textTransform !== 'uppercase') return null;
+		const before = neighbour(k, 'previousElementSibling');
+		const beforeRect = before && visualRect(before);
+		const gapBefore = beforeRect && beforeRect.bottom <= rect.top + 1 ? rect.top - beforeRect.bottom : Infinity;
+		return headingRect.top - rect.bottom < gapBefore ? { element: k, rect, text: text.slice(0, 50) } : null;
+	};
+	// Headings h1 to h4: gap to the previous and the next content block in flow. A kicker counts as part of the heading.
+	// null when there is none or the neighbour sits beside it.
 	const headings = vis
 		.filter((e) => /^H[1-4]$/.test(e.tagName))
 		.slice(0, MAX_HEADINGS_LISTED)
 		.map((e) => {
-			const r = e.getBoundingClientRect();
-			const prev = neighbour(e, 'previousElementSibling');
+			const r = visualRect(e) || e.getBoundingClientRect();
+			const kicker = kickerOf(e, r);
+			const top = kicker ? Math.min(kicker.rect.top, r.top) : r.top;
+			const prev = neighbour(kicker ? kicker.element : e, 'previousElementSibling');
 			const next = neighbour(e, 'nextElementSibling');
-			const above = prev && prev.getBoundingClientRect().bottom <= r.top + 1 ? Math.round(r.top - prev.getBoundingClientRect().bottom) : null;
-			const below = next && next.getBoundingClientRect().top >= r.bottom - 1 ? Math.round(next.getBoundingClientRect().top - r.bottom) : null;
-			return { selector: selectorOf(e), box: boxOf(e), tag: e.tagName, text: e.textContent.trim().slice(0, 50), gapAbove: above === null ? null : Math.max(0, above), gapBelow: below === null ? null : Math.max(0, below) };
+			const prevRect = prev && visualRect(prev);
+			const nextRect = next && visualRect(next);
+			const above = prevRect && prevRect.bottom <= top + 1 ? Math.round(top - prevRect.bottom) : null;
+			const below = nextRect && nextRect.top >= r.bottom - 1 ? Math.round(nextRect.top - r.bottom) : null;
+			return {
+				selector: selectorOf(e),
+				box: boxOf(e),
+				tag: e.tagName,
+				text: e.textContent.trim().slice(0, 50),
+				kicker: kicker ? { selector: selectorOf(kicker.element), text: kicker.text, gap: Math.round(r.top - kicker.rect.bottom) } : null,
+				gapAbove: above === null ? null : Math.max(0, above),
+				gapBelow: below === null ? null : Math.max(0, below)
+			};
 		});
 
 	// Form labels: gap to their own control against the nearest other control. Labels with a hidden control are skipped.
@@ -120,24 +243,31 @@
 			};
 		});
 
-	// Groups of 3+ repeated siblings (same tag and class signature). Text-flow elements (paragraphs, headings, labels, fields,
-	// inline elements) are not groups: their spacing is typographic. Inner gap = median nearest-neighbour distance between
-	// members. Outer gap = smallest distance from the group's bounding box to a non-member sibling or to a sibling of the parent
-	// that does not overlap it.
+	// Sibling groups: repeated siblings (same tag and class signature) that read as a set, meaning at least two rows,
+	// or three items in one row. Text-flow elements (paragraphs, headings, labels, fields, inline elements) are not groups:
+	// their spacing is typographic. Page sections without an edge of their own are page rhythm, not a group.
+	// Inner gap = median nearest-neighbour distance between the members' visual boxes. Outer gap = smallest distance from
+	// the group's box to a non-member block above or below it (a neighbour beside it belongs to the same row).
 	const MAX_GROUPS = 30;
 	const GROUP_MIN_SIZE = 24;
 	const FLOW_TAGS = /^(P|H[1-6]|LABEL|INPUT|SELECT|TEXTAREA|BR|HR|SPAN|OPTION)$/;
+	const PAGE_SECTION_TAGS = /^(SECTION|HEADER|FOOTER|MAIN|NAV|ASIDE)$/;
 	const signature = (e) => `${e.tagName.toLowerCase()}${[...e.classList].sort().map((c) => `.${c}`).join('')}`;
-	const rectOf = (e) => e.getBoundingClientRect();
-	const union = (rects) => ({
-		left: Math.min(...rects.map((r) => r.left)),
-		top: Math.min(...rects.map((r) => r.top)),
-		right: Math.max(...rects.map((r) => r.right)),
-		bottom: Math.max(...rects.map((r) => r.bottom))
-	});
 	const medianOf = (nums) => {
 		const sorted = [...nums].sort((x, y) => x - y);
 		return sorted[Math.floor(sorted.length / 2)];
+	};
+	// Members on the same row overlap vertically by more than half of the smaller one.
+	const countRows = (rects) => {
+		const rows = [];
+		for (const r of [...rects].sort((a, b) => a.top - b.top)) {
+			const row = rows.find((o) => Math.min(o.bottom, r.bottom) - Math.max(o.top, r.top) > 0.5 * Math.min(o.bottom - o.top, r.bottom - r.top));
+			if (row) {
+				row.top = Math.min(row.top, r.top);
+				row.bottom = Math.max(row.bottom, r.bottom);
+			} else rows.push({ top: r.top, bottom: r.bottom });
+		}
+		return rows.length;
 	};
 	const groups = [];
 	for (const parent of [document.body, ...vis]) {
@@ -145,14 +275,17 @@
 		const bySignature = new Map();
 		for (const child of parent.children) {
 			if (!inFlow(child) || FLOW_TAGS.test(child.tagName) || cs(child).display === 'inline') continue;
-			const r = rectOf(child);
-			if (r.width < GROUP_MIN_SIZE || r.height < GROUP_MIN_SIZE) continue;
+			if (PAGE_SECTION_TAGS.test(child.tagName) && !hasVisibleEdge(child)) continue;
+			const r = visualRect(child);
+			if (!r || r.right - r.left < GROUP_MIN_SIZE || r.bottom - r.top < GROUP_MIN_SIZE) continue;
 			const key = signature(child);
 			bySignature.set(key, [...(bySignature.get(key) || []), child]);
 		}
 		for (const [key, members] of bySignature) {
-			if (members.length < 3 || groups.length >= MAX_GROUPS) continue;
-			const rects = members.map(rectOf);
+			if (members.length < 2 || groups.length >= MAX_GROUPS) continue;
+			const rects = members.map(visualRect);
+			const rows = countRows(rects);
+			if (rows < 2 && members.length < 3) continue;
 			const inner = medianOf(rects.map((r, i) => Math.min(...rects.filter((_, j) => j !== i).map((o) => rectDistance(r, o)))));
 			const box = union(rects);
 			const memberSet = new Set(members);
@@ -161,43 +294,26 @@
 				const n = parent === document.body ? null : neighbour(parent, side);
 				if (n) around.push(n);
 			}
-			const distances = around.map((c) => rectDistance(box, rectOf(c))).filter((d) => d > 0);
+			const distances = around
+				.map(visualRect)
+				.filter((r) => r && (r.bottom <= box.top + 1 || r.top >= box.bottom - 1))
+				.map((r) => rectDistance(box, r))
+				.filter((d) => d > 0);
 			// The selector names the member at the top left of the group box; `parent` names the container.
-			const anchor = members.reduce((a, b) => (rectOf(b).left + rectOf(b).top < rectOf(a).left + rectOf(a).top ? b : a));
+			const anchor = members.reduce((a, b) => (visualRect(b).left + visualRect(b).top < visualRect(a).left + visualRect(a).top ? b : a));
 			groups.push({
 				selector: selectorOf(anchor),
 				parent: selectorOf(parent),
 				box: { x: Math.round(box.left + window.scrollX), y: Math.round(box.top + window.scrollY), w: Math.round(box.right - box.left), h: Math.round(box.bottom - box.top) },
 				signature: key,
 				count: members.length,
+				rows,
 				members: members.slice(0, 5).map(selectorOf),
 				inner: Math.round(inner),
 				outer: distances.length ? Math.round(Math.min(...distances)) : null
 			});
 		}
 	}
-
-	// ---- edge detection shared by similarity and common region ----
-	const px = (value) => parseFloat(value);
-	const isTransparent = (c) => c === 'transparent' || /(,\s*|\/\s*)0(\.0+)?%?\)$/.test(c);
-	const bgCache = new WeakMap();
-	// Nearest ancestor background that is not transparent; white canvas when none.
-	const effectiveBg = (el) => {
-		if (!el) return 'rgb(255, 255, 255)';
-		if (bgCache.has(el)) return bgCache.get(el);
-		const own = cs(el).backgroundColor;
-		const result = isTransparent(own) ? effectiveBg(el.parentElement) : own;
-		bgCache.set(el, result);
-		return result;
-	};
-	const SIDES = ['Top', 'Right', 'Bottom', 'Left'];
-	// A box has a visible edge when a real border, a shadow or a fill that differs from its surroundings draws it.
-	const hasVisibleEdge = (el) => {
-		const s = cs(el);
-		const border = SIDES.some((side) => px(s[`border${side}Width`]) > 0 && s[`border${side}Style`] !== 'none' && !isTransparent(s[`border${side}Color`]));
-		const fill = !isTransparent(s.backgroundColor) && s.backgroundColor !== effectiveBg(el.parentElement);
-		return s.boxShadow !== 'none' || border || fill;
-	};
 
 	// ---- similarity (G2, S5): style signatures per role ----
 	const MAX_ROLE_ELEMENTS = 300; // elements inspected per role

@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Proximity patterns</title>
+<style>
+body { margin: 0; font: 17px/1.5 Arial, sans-serif; color: #222; background: #fff; }
+.wrap { max-width: 760px; margin: 0 auto; padding: 0 20px; }
+p, h1, h2, h3 { margin: 0; }
+/* Pattern A: byline above the h1, sections with a hero that has invisible bottom padding */
+#hero { padding: 40px 0 100px; margin-bottom: 64px; }
+#hero .byline { font-size: 13px; margin-bottom: 16px; }
+#hero h1 { font-size: 44px; margin-bottom: 32px; }
+.page-section { margin-top: 144px; }
+.page-section:first-of-type { margin-top: 0; }
+.page-section h2 { margin-bottom: 16px; }
+/* Pattern B: dated entries with their own left border, and one row of example links */
+#entries { margin-top: 160px; }
+#entries > h2 { margin-bottom: 56px; }
+.entry { border-left: 3px solid #888; padding-left: 16px; margin-bottom: 24px; }
+.entry time { display: block; font-size: 13px; }
+.entry h3 { margin: 12px 0; font-size: 22px; }
+.examples { display: flex; gap: 16px; margin-top: 40px; }
+/* Pattern C: eyebrow pill above the heading, decorative rule below it */
+#band { margin-top: 160px; }
+.eyebrow { display: inline-block; border: 1px solid #c0a; border-radius: 99px; padding: 4px 12px; font-size: 12px; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 16px; }
+#band h2 { margin-bottom: 16px; font-size: 30px; }
+.rule { width: 48px; height: 4px; background: #c0a; margin-bottom: 48px; }
+/* A real violation: the heading hugs the caption above it, and the grid gaps are wider than the space below */
+#real { margin-top: 160px; }
+#real .cap { margin-bottom: 12px; }
+#real h2 { font-size: 30px; margin-bottom: 40px; }
+.grid { display: grid; grid-template-columns: 1fr 1fr; gap: 40px; margin-top: 24px; }
+.rc { height: 80px; background: #eee; }
+.after { margin-top: 16px; }
+</style></head>
+<body>
+<div class="wrap" id="app">
+<section id="hero">
+<p class="byline">Maintained by one person since 2019</p>
+<h1>Hero heading for the page</h1>
+<p>The lead paragraph under the hero heading explains the offer in one clear sentence.</p>
+</section>
+<main>
+<section class="page-section" id="projects"><h2>Projects</h2><p>Three projects sit in this section and each one has its own short description.</p></section>
+<section class="page-section" id="method"><h2>Method</h2><p>The method section describes how the work runs from the first call to the handover.</p></section>
+<section class="page-section" id="about"><h2>About</h2><p>The about section tells who is behind the work and why the studio exists at all.</p></section>
+<section id="entries">
+<h2>Entries</h2>
+<article class="entry"><time>7 November 2026</time><h3>Berlin in squares</h3><p>Twelve districts as a composition, each with its own colour and a short note.</p></article>
+<article class="entry"><time>3 November 2026</time><h3>Atlas and map</h3><p>Two views of the same data, one as a surface and one as a list of places.</p></article>
+<article class="entry"><time>1 November 2026</time><h3>Field notes</h3><p>Short observations from walking through the districts during the first week.</p></article>
+<div class="examples"><span>Examples:</span><a href="#a">Mitte</a><a href="#b">Pankow</a><a href="#c">Spandau</a></div>
+</section>
+<section id="band">
+<span class="eyebrow">Patent intelligence</span>
+<h2>Reports that answer one question</h2>
+<div class="rule"></div>
+<p>The paragraph under the rule sits well apart from the heading and carries the actual claim.</p>
+</section>
+<section id="real">
+<p class="cap">This caption paragraph runs long enough to count as body text and not as a short label above the heading.</p>
+<h2>Real violation</h2>
+<p>Text below the heading sits further from it than the paragraph above does.</p>
+<div class="grid"><div class="rc"></div><div class="rc"></div><div class="rc"></div><div class="rc"></div></div>
+<p class="after">A paragraph after the grid, only 16 pixels away while the cards sit 40 pixels apart.</p>
+</section>
+</main>
+</div>
+</body></html>
