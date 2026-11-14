@@ -41,3 +41,36 @@ export function waitForSettled(page, { quietMs = 500, timeoutMs = 8000 } = {}) {
 		{ quietMs, timeoutMs }
 	);
 }
+
+/**
+ * @typedef {Object} ScrollInfo
+ * @property {number} steps scroll steps taken
+ * @property {boolean} capped stopped at `maxSteps` before the bottom
+ * @property {number} height document height after scrolling, in CSS px
+ */
+
+/**
+ * Scroll through the whole page so lazy images and reveal animations load, then return to the top.
+ * The height is read again at every step because lazy content can grow the page.
+ * @param {import('playwright').Page} page
+ * @param {{ maxSteps?: number, pauseMs?: number }} [options]
+ * @returns {Promise<ScrollInfo>}
+ */
+export async function scrollWholePage(page, { maxSteps = 30, pauseMs = 150 } = {}) {
+	const viewportHeight = await page.evaluate(() => window.innerHeight);
+	let steps = 0;
+	let height = await page.evaluate(() => document.documentElement.scrollHeight);
+	let y = 0;
+	while (steps < maxSteps && y + viewportHeight < height) {
+		y += viewportHeight;
+		// `instant`: `scroll-behavior: smooth` would leave the page mid-scroll.
+		await page.evaluate((top) => window.scrollTo({ top, behavior: 'instant' }), y);
+		await page.waitForTimeout(pauseMs);
+		steps++;
+		height = await page.evaluate(() => document.documentElement.scrollHeight);
+	}
+	const capped = y + viewportHeight < height;
+	await page.evaluate(() => window.scrollTo({ top: 0, behavior: 'instant' }));
+	await page.waitForTimeout(pauseMs);
+	return { steps, capped, height };
+}
