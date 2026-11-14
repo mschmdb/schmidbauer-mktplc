@@ -46,3 +46,23 @@ test('first viewport: a second h1 below the fold is not "present"; clean page ha
 	assert.deepEqual(clean.textOverImage, []);
 	assert.equal(clean.weights.nearLargest.competing, false);
 });
+
+test('prominence: the hero heading ranks first on the fixture and every entry has a selector and a box', opts, async () => {
+	const { rankProminence } = await import('./lib/prominence.mjs');
+	const raw = await measureDesignFixture('design-first-viewport.html', viewport);
+	const r = rankProminence(raw.prominence.candidates, { width: 1000, height: 600 });
+	assert.equal(r.items[0].label, 'Primary promise in the hero');
+	assert.ok(r.items.length <= 8 && r.items.length >= 4);
+	for (const item of r.items) assert.ok(item.selector && item.box.w > 0 && item.score > 0);
+	assert.match(r.method, /prediction/);
+});
+
+test('prominence: on the clean page the h1 leads and only the filled link counts as a button', opts, async () => {
+	const { rankProminence } = await import('./lib/prominence.mjs');
+	const raw = await measureDesignFixture('design-clean.html');
+	const view = { width: 1280, height: 800 };
+	assert.match(rankProminence(raw.prominence.candidates, view).items[0].label, /Quiet interfaces/);
+	const byLabel = (text) => raw.prominence.candidates.find((c) => c.label === text);
+	assert.equal(byLabel('Start a project').kind, 'button');
+	assert.equal(byLabel('See our work').kind, 'text', 'outlined: no fill');
+});

@@ -207,9 +207,42 @@
 		if (via) textOverImage.push({ selector: selectorOf(e), box: boxOf(e), label: label(e), via });
 	}
 
+	// ---- prominence candidates (H2): raw inputs; lib/prominence.mjs scores them (a prediction, not eye tracking) ----
+	// Candidates: text elements and buttons in the first viewport, and img, video and canvas of at least 48 x 48 px.
+	// The 60 largest by visible area are kept (MAX_CANDIDATES).
+	const MAX_CANDIDATES = 60;
+	const MIN_MEDIA = 48;
+	const candidateOf = (e, kind, r) => {
+		const s = cs(e);
+		const c = clip(r);
+		return {
+			selector: selectorOf(e),
+			box: boxOf(e),
+			label: kind === 'media' ? `${e.tagName.toLowerCase()} ${e.getAttribute('alt') || ''}`.trim() : label(e),
+			kind,
+			area: Math.round(clippedArea(r)),
+			color: s.color,
+			background: effectiveBg(e),
+			surround: effectiveBg(e.parentElement),
+			fontSize: px(s.fontSize),
+			fontWeight: s.fontWeight,
+			cx: Math.round((c.left + c.right) / 2),
+			cy: Math.round((c.top + c.bottom) / 2)
+		};
+	};
+	const isButton = (e) => e.matches('button, [role=button], input[type=submit], a[href]') && isFilled(e);
+	const prominenceCandidates = [
+		...firstText.map((e) => candidateOf(e, isButton(e) ? 'button' : 'text', textRect(e))),
+		...firstVis.filter((e) => e.matches('img, video, canvas') && e.getBoundingClientRect().width >= MIN_MEDIA && e.getBoundingClientRect().height >= MIN_MEDIA).map((e) => candidateOf(e, 'media', e.getBoundingClientRect()))
+	]
+		.filter((c) => c.area > 0)
+		.sort((a, b) => b.area - a.area)
+		.slice(0, MAX_CANDIDATES);
+
 	return {
 		limits: { total: allElements.length, scanned: scanned.length, capped: allElements.length > MAX_ELEMENTS },
 		hierarchy: { primaryButtons },
-		firstViewport: { width: VW, height: VH, h1, weights, media, overlays, textOverImage }
+		firstViewport: { width: VW, height: VH, h1, weights, media, overlays, textOverImage },
+		prominence: { candidates: prominenceCandidates }
 	};
 })();
