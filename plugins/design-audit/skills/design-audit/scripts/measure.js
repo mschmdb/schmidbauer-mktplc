@@ -41,6 +41,8 @@
 	};
 	const count = (arr) => arr.reduce((m, k) => ((m[k] = (m[k] || 0) + 1), m), {});
 
+	// First font family of text outside code samples. audit.mjs classifies monospace with lib/fonts.mjs.
+	const fontsOutsideCode = count(textEls.filter((e) => !e.closest('code, pre, kbd, samp, tt')).map((e) => cs(e).fontFamily.split(',')[0].trim()));
 	const fonts = count(textEls.map((e) => cs(e).fontFamily.split(',')[0]));
 	const sizes = count(textEls.map((e) => cs(e).fontSize));
 	const colors = count(textEls.map((e) => cs(e).color));
@@ -162,10 +164,13 @@
 		uppercaseTrackedLabels: upperLabels.length,
 		uppercaseLabelExamples: upperLabels.slice(0, 8).map((e) => e.textContent.trim().slice(0, 40)),
 		middleDotStrings: (bodyText.match(/\S\s+·\s+\S/g) || []).length,
-		arrowSuffixes: (bodyText.match(/[→↗]/g) || []).length,
-		monoTextElements: textEls.filter((e) => /mono/i.test(cs(e).fontFamily)).length,
+		// Arrows as call-to-action suffix: only link and button labels, not arrows in running text.
+		arrowSuffixes: [...document.querySelectorAll('a, button, [role=button]')].filter(
+			(e) => readable(e) && /[→↗↘➔➜]\s*$/.test(e.textContent.trim())
+		).length,
 		headingAccents: headings.filter((h) => h.accents.length > 0).length,
-		numberedMarkers: (bodyText.match(/(^|\s)0[1-9](\s|$)/g) || []).length,
+		// Elements whose whole text is 01 to 09 (optionally with a dot), outside <time>. Dates in running text do not match.
+		numberedMarkers: textEls.filter((e) => /^0[1-9][.:]?$/.test(e.textContent.trim()) && !e.closest('time')).length,
 		emDashes: (bodyText.match(/—/g) || []).length,
 		cardLikeBoxes: [...document.querySelectorAll('article, li, div')].filter((e) => {
 			const s = cs(e);
@@ -178,23 +183,28 @@
 		}).length
 	};
 
-	// Text repetition (rule 32): most frequent word pairs and triples.
-	const words = bodyText
-		.toLowerCase()
-		.replace(/[^\p{L}\p{N}\s-]/gu, ' ')
-		.split(/\s+/)
-		.filter((w) => w.length > 2);
-	const ngrams = {};
-	for (const n of [2, 3]) {
-		for (let i = 0; i + n <= words.length; i++) {
-			const g = words.slice(i, i + n).join(' ');
-			ngrams[g] = (ngrams[g] || 0) + 1;
-		}
+	// Text repetition (rule 32): measure.js only collects the copy a reader meets in the content.
+	// Navigation, header chrome, footer, scripts and hidden text are skipped. One block per line,
+	// so word groups never span blocks. audit.mjs counts the phrases with lib/ngrams.mjs.
+	const chromeSelector = 'nav, footer, [role=navigation], [role=contentinfo], script, style, noscript, template';
+	const blockOf = (node) => {
+		let e = node.parentElement;
+		while (e && e.parentElement && cs(e).display.startsWith('inline')) e = e.parentElement;
+		return e;
+	};
+	const contentLines = [];
+	let lastBlock = null;
+	const textWalker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
+	for (let node = textWalker.nextNode(); node; node = textWalker.nextNode()) {
+		const parent = node.parentElement;
+		const text = node.data.replace(/\s+/g, ' ').trim();
+		if (!text || !parent || parent.closest(chromeSelector) || !readable(parent)) continue;
+		const block = blockOf(node);
+		if (block === lastBlock && contentLines.length) contentLines[contentLines.length - 1] += ` ${text}`;
+		else contentLines.push(text);
+		lastBlock = block;
 	}
-	const repeated = Object.entries(ngrams)
-		.filter(([, c]) => c >= 3)
-		.sort((a, b) => b[1] - a[1])
-		.slice(0, 20);
+	const contentText = contentLines.join('\n');
 
 	// First viewport (rule 16): what a visitor sees before scrolling or interacting.
 	const inFirstViewport = (e) => {
@@ -233,13 +243,14 @@
 		pageHeight: document.documentElement.scrollHeight,
 		firstViewport,
 		fonts,
+		fontsOutsideCode,
+		contentText,
 		sizes,
 		colors,
 		paragraphs,
 		smallTargets,
 		headings: headings.map((h) => h.line),
 		tells,
-		repeated,
 		hasMain: !!document.querySelector('main'),
 		firstLinkText: document.querySelector('a')?.textContent.trim().slice(0, 40),
 		reducedMotionRule: sheetsContain('prefers-reduced-motion'),

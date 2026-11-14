@@ -1,6 +1,7 @@
 import { test, after } from 'node:test';
 import assert from 'node:assert/strict';
 import { closeBrowser, measureFixture, skipReason } from './browser-helpers.mjs';
+import { finishMeasure } from './lib/post.mjs';
 
 after(closeBrowser);
 const opts = { skip: skipReason };
@@ -32,4 +33,18 @@ test('paragraphs measure real characters per line inside main content only (item
 	assert.ok(p.charsPerLine >= 34 && p.charsPerLine <= 41, `charsPerLine: ${p.charsPerLine}`);
 	assert.ok(p.charsPerLineMax >= p.charsPerLine);
 	assert.equal(p.charsPerLineEstimate, undefined);
+});
+
+test('numbered markers skip dates, arrows count only link and button labels, mono skips code (item 8)', opts, async () => {
+	const m = await measureFixture('tells.html');
+	assert.equal(m.tells.numberedMarkers, 3);
+	assert.equal(m.tells.arrowSuffixes, 2);
+	const out = finishMeasure(m);
+	assert.equal(out.tells.monoTextElements, 3);
+});
+
+test('repeated phrases ignore nav, footer and hidden text (item 9)', opts, async () => {
+	const out = finishMeasure(await measureFixture('tells.html'));
+	assert.deepEqual(out.repeated, []);
+	assert.equal(out.contentText, undefined);
 });

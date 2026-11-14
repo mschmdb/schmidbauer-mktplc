@@ -8,6 +8,7 @@ import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { focusWalk } from './focus-walk.mjs';
+import { finishMeasure } from './lib/post.mjs';
 
 const [url, out] = process.argv.slice(2);
 if (!url || !out) {
@@ -18,7 +19,7 @@ mkdirSync(out, { recursive: true });
 
 const here = dirname(fileURLToPath(import.meta.url));
 const measureSource = readFileSync(join(here, 'measure.js'), 'utf8');
-const measure = (page) => page.evaluate(measureSource);
+const measure = async (page) => finishMeasure(await page.evaluate(measureSource));
 
 async function auditViewport(browser, name, viewport, result) {
 	const context = await browser.newContext({ viewport });
