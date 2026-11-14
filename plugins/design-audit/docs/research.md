@@ -270,7 +270,7 @@ Procedure that follows:
 
 ## 10. Generic AI look
 
-Sources are blogs plus Anthropic's own prompt guide. Evidence class T throughout.
+Sources are blogs plus Anthropic's own prompt guide. The trait lists are class T. The pages named below were opened in this session (V); they are practitioner writing, not studies.
 
 - Best attested traits not in the old rule 31: purple or indigo gradients; Inter, Roboto or a system font as the only face; the fixed skeleton (centred hero, pill badge, three identical icon cards, social proof, call to action); unmodified shadcn or Tailwind defaults; invented stats, logo walls and testimonials.
 - Disputed: glassmorphism, bento grids, mesh backgrounds.
@@ -278,7 +278,7 @@ Sources are blogs plus Anthropic's own prompt guide. Evidence class T throughout
 - Anthropic's guide: https://platform.claude.com/cookbook/coding-prompting-for-frontend-aesthetics
 - Largest data set: https://www.adriankrebs.ch/blog/design-slop/
 
-Positive craft evidence (C, from Vercel's guidelines, Rauno Freiberg, Butterick, Emil Kowalski):
+Positive craft evidence (C, V; from Vercel's guidelines, Rauno Freiberg, Butterick's summary of key rules at https://practicaltypography.com/summary-of-key-rules.html, Emil Kowalski):
 
 - Content-specific copy and real imagery.
 - Section layouts that vary with their content.
@@ -288,6 +288,8 @@ Positive craft evidence (C, from Vercel's guidelines, Rauno Freiberg, Butterick,
 - Small touches: styled `::selection`, focus rings that fit the radius.
 
 Sources: https://vercel.com/design/guidelines, https://github.com/raunofreiberg/interfaces, https://emilkowal.ski/ui/you-dont-need-animations
+
+Copy: "Match between the system and the real world" is heuristic 2 of NN/g's ten usability heuristics (C, V): https://www.nngroup.com/articles/ten-usability-heuristics/
 
 ## 11. Taking in a given design
 
