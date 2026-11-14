@@ -8,6 +8,7 @@ import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { focusWalk } from './focus-walk.mjs';
+import { waitForSettled } from './page-prep.mjs';
 import { finishMeasure } from './lib/post.mjs';
 
 const [url, out] = process.argv.slice(2);
@@ -26,7 +27,7 @@ async function auditViewport(browser, name, viewport, result) {
 	try {
 		const page = await context.newPage();
 
-		// Animation frames from first paint, before networkidle.
+		// Animation frames from first paint, before the page has settled.
 		const start = Date.now();
 		const response = await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 60000 });
 		result[`${name}Status`] = response?.status() ?? null;
@@ -34,10 +35,13 @@ async function auditViewport(browser, name, viewport, result) {
 			await page.waitForTimeout(Math.max(0, t - (Date.now() - start)));
 			await page.screenshot({ path: join(out, `${name}-t${t}.png`) });
 		}
-		await page.waitForLoadState('networkidle', { timeout: 60000 }).catch(() => {
-			result.notes.push(`${name}: networkidle not reached within 60 s; measurements may miss late content.`);
-		});
-		result[`${name}LoadMs`] = Date.now() - start;
+		await page.waitForLoadState('load', { timeout: 60000 });
+		const loadMs = Date.now() - start;
+		const settle = await waitForSettled(page);
+		if (!settle.fontsReady || !settle.quiet) {
+			result.notes.push(`${name}: page not settled (fonts ready: ${settle.fontsReady}, DOM quiet: ${settle.quiet}); measurements may miss late content.`);
+		}
+		result[`${name}Timing`] = { loadMs, settledMs: Date.now() - start, fontsReady: settle.fontsReady, domQuiet: settle.quiet };
 
 		await page.screenshot({ path: join(out, `${name}-full.png`), fullPage: true });
 

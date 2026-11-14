@@ -1,0 +1,14 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><title>Settle</title></head>
+<body><main><p id="p">start</p></main>
+<script>
+// Changes the DOM every 100 ms for 600 ms, then stops. Keeps running forever with ?forever.
+const forever = location.search.includes('forever');
+let n = 0;
+window.__mutationsDone = false;
+const id = setInterval(() => {
+	document.getElementById('p').textContent = 'tick ' + ++n;
+	if (!forever && n >= 6) { clearInterval(id); window.__mutationsDone = true; }
+}, forever ? 40 : 100);
+</script>
+</body></html>
