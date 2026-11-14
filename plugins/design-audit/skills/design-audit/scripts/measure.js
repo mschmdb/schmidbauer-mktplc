@@ -157,7 +157,7 @@
 		return { text, accents, line: accents.length ? text + ACCENT_MARKER + accents.join(' | ') : text };
 	});
 
-	// AI-look signals (rule 31). Count, don't judge.
+	// AI-look signals (K2). Count, don't judge.
 	const upperLabels = textEls.filter((e) => {
 		const s = cs(e);
 		return s.textTransform === 'uppercase' && parseFloat(s.letterSpacing) > 0 && e.textContent.trim().length < 60;
@@ -186,7 +186,7 @@
 		}).length
 	};
 
-	// Text repetition (rule 32): measure.js only collects the copy a reader meets in the content.
+	// Text repetition (W3): measure.js only collects the copy a reader meets in the content.
 	// Navigation, header chrome, footer, scripts and hidden text are skipped. One block per line,
 	// so word groups never span blocks. audit.mjs counts the phrases with lib/ngrams.mjs.
 	const chromeSelector = 'nav, footer, [role=navigation], [role=contentinfo], script, style, noscript, template';
@@ -209,7 +209,7 @@
 	}
 	const contentText = contentLines.join('\n');
 
-	// First viewport (rule 16): what a visitor sees before scrolling or interacting.
+	// First viewport (P2): what a visitor sees before scrolling or interacting.
 	// Configured size, not window.innerWidth: mobile emulation widens innerWidth (and height) when the page overflows sideways.
 	const vpWidth = window.__auditViewport?.width ?? document.documentElement.clientWidth;
 	const vpHeight = window.__auditViewport?.height ?? window.innerHeight;
