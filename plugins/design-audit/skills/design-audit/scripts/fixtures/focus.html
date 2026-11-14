@@ -1,0 +1,18 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><title>Focus</title>
+<style>
+body { margin: 20px; font: 16px sans-serif; }
+a, button { display: inline-block; margin: 8px; padding: 6px; color: #111; background: #fff; border: 1px solid #999; }
+.default:focus-visible { outline: 3px solid #1a73e8; }
+.tw-none { outline: 2px solid transparent; outline-offset: 2px; }
+.ring { outline: 2px solid transparent; }
+.ring:focus-visible { box-shadow: 0 0 0 3px #1a73e8; }
+.border-only { outline: none; }
+.border-only:focus-visible { border-color: #d00; }
+</style></head>
+<body>
+<a href="#a" class="default">default ring</a>
+<a href="#b" class="tw-none">transparent outline</a>
+<button class="ring">box shadow ring</button>
+<button class="border-only">border colour</button>
+</body></html>

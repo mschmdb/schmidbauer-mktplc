@@ -1,0 +1,17 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><title>Hidden text</title>
+<style>
+body { margin: 0; font: 16px sans-serif; }
+.sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; font-size: 32px; }
+</style></head>
+<body>
+<main>
+<p style="font-size:18px">Visible paragraph that really is on the page.</p>
+<p style="font-size:31px;opacity:0">Opacity zero text</p>
+<span class="sr-only">Screen reader only text</span>
+<p style="font-size:33px;position:absolute;left:-9999px;top:0">Off-screen text</p>
+<p style="font-size:34px" aria-hidden="true">Decorative aria-hidden text</p>
+<p style="font-size:35px;display:none">Display none</p>
+<p style="font-size:36px;visibility:hidden">Visibility hidden</p>
+</main>
+</body></html>

@@ -1,0 +1,12 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><title>Late content</title>
+<style>
+body { margin: 0; padding: 24px; font: 16px/1.4 Arial, sans-serif; }
+#late { display: none; }
+</style></head>
+<body>
+<h1>Present from the start</h1>
+<p>Body copy that is there at once.</p>
+<h2 id="late">Revealed after 1500 ms</h2>
+<script>setTimeout(() => { document.getElementById('late').style.display = 'block'; }, 1500);</script>
+</body></html>

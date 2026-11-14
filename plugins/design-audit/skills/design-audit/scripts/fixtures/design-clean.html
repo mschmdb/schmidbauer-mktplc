@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Clean design</title>
+<style>
+body { margin: 0; font: 18px/1.6 Georgia, serif; color: #1a1a1a; background: #fff; }
+.top { display: flex; justify-content: space-between; align-items: center; padding: 16px 24px; border-bottom: 1px solid #ddd; }
+.top nav { display: flex; gap: 24px; }
+.top a { color: #1a1a1a; }
+main { max-width: 720px; margin: 0 auto; padding: 0 24px; }
+.hero { padding-bottom: 160px; }
+h1 { font: 700 48px/1.2 Georgia, serif; margin: 64px 0 24px; }
+h2 { font: 700 32px/1.25 Georgia, serif; margin: 64px 0 24px; }
+h3 { font: 700 24px/1.3 Georgia, serif; margin: 0 0 8px; }
+p { margin: 0 0 24px; }
+p a { color: #1d4ed8; text-decoration: underline; }
+.actions { display: flex; gap: 16px; }
+.btn { display: inline-block; padding: 12px 24px; border-radius: 8px; font: 600 16px/1.2 Georgia, serif; text-decoration: none; cursor: pointer; }
+.primary { background: #1d4ed8; color: #fff; border: 2px solid #1d4ed8; }
+.secondary { background: transparent; color: #1a1a1a; border: 2px solid #1a1a1a; }
+.grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+.card { border: 1px solid #ccc; border-radius: 8px; padding: 24px; }
+.card p { margin: 0; font-size: 16px; }
+.inner { border: 1px solid #ddd; padding: 8px; margin-top: 8px; }
+label { display: block; margin: 0 0 8px; font-size: 16px; }
+input { display: block; box-sizing: border-box; width: 100%; padding: 8px 12px; margin: 0 0 24px; border: 1px solid #888; border-radius: 4px; font: 16px Georgia, serif; }
+</style></head>
+<body>
+<header class="top"><a href="/" class="brand">Studio</a><nav><a href="/work">Work</a><a href="/about">About</a></nav></header>
+<main>
+<div class="hero">
+<h1>Quiet interfaces for careful teams</h1>
+<p class="lead">We design and build small, fast websites that explain one thing well and leave out everything else.</p>
+<div class="actions"><a class="btn primary" href="/start">Start a project</a><a class="btn secondary" href="/work">See our work</a></div>
+</div>
+<h2>What we do</h2>
+<div class="grid">
+<div class="card"><h3>Research</h3><p>We talk to the people who use the product before we draw anything at all.</p></div>
+<div class="card"><h3>Design</h3><p>We draw few screens and test them early with real content and real users.</p></div>
+<div class="card"><h3>Build</h3><p>We ship small changes often.</p><div class="inner"><p>Every release has a short note.</p></div></div>
+</div>
+<h2>Contact</h2>
+<form>
+<label for="name">Name</label>
+<input id="name" type="text">
+<label for="email">Email</label>
+<input id="email" type="email">
+<button class="btn primary" type="submit">Send</button>
+</form>
+<p style="margin-top: 24px">Read our <a href="/privacy">privacy note</a> before you send anything, so you know what we keep and for how long.</p>
+</main>
+</body></html>

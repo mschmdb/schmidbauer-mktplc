@@ -1,7 +1,7 @@
 {
   "name": "design-audit",
-  "version": "1.0.0",
-  "description": "Audit a live website's design, UX, motion and copy against 32 guidelines with browser measurements, screenshots and evidence-labeled findings.",
+  "version": "2.0.0",
+  "description": "Two skills that share one rule file: design-audit checks a live website's visual design and perception on desktop and mobile with browser measurements and a simulated glance test, and design-build applies the same rules while you build or redesign UI.",
   "author": {
     "name": "Matze Schmidbauer",
     "url": "https://github.com/mschmdb"

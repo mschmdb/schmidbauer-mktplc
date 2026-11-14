@@ -1,0 +1,21 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><title>Lazy</title>
+<style>body { margin: 0; font: 16px sans-serif; } .lazy { height: 100px; background: #eee; } .lazy.loaded { background: #6c6; }</style></head>
+<body><main>
+<section style="height:900px"><div class="lazy" data-i="0">block 0</div></section>
+<section style="height:900px"><div class="lazy" data-i="1">block 1</div></section>
+<section style="height:900px"><div class="lazy" data-i="2">block 2</div></section>
+<section style="height:900px"><div class="lazy" data-i="3">block 3</div></section>
+<section style="height:900px"><div class="lazy" data-i="4">block 4</div></section>
+<section style="height:900px"><div class="lazy" data-i="5">block 5</div></section>
+<section style="height:900px"><div class="lazy" data-i="6">block 6</div></section>
+<section style="height:900px"><div class="lazy" data-i="7">block 7</div></section>
+</main>
+<script>
+// Content that only loads once it scrolls into view, like lazy images.
+const io = new IntersectionObserver((entries) => {
+	for (const e of entries) if (e.isIntersecting) e.target.classList.add('loaded');
+});
+document.querySelectorAll('.lazy').forEach((el) => io.observe(el));
+</script>
+</body></html>
