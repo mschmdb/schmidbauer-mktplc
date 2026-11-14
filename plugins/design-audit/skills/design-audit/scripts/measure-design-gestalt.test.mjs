@@ -75,3 +75,16 @@ test('region: the four nested bordered boxes give depth 4, the clean page at mos
 	assert.equal(clean.maxDepth, 2);
 	assert.deepEqual(clean.deep, []);
 });
+
+test('colour: generic fixture has purple hues; clean fixture has one blue accent on its primary buttons', opts, async () => {
+	const { deriveColour } = await import('./lib/colour.mjs');
+	const generic = deriveColour((await measureDesignFixture('design-generic-ai.html')).colour);
+	assert.ok(generic.backgrounds.families.length >= 2, JSON.stringify(generic.backgrounds.families.map((f) => f.hue)));
+	assert.ok(generic.accentHues.length >= 2);
+	const clean = deriveColour((await measureDesignFixture('design-clean.html')).colour);
+	assert.deepEqual(clean.accentHues, [240]);
+	assert.ok(clean.accents[0].count >= 2, 'primary link button and submit button');
+	assert.ok(clean.text.neutralShare > 0.9);
+	assert.ok(clean.lightness.buttonBackground.n >= 1);
+	assert.ok(clean.accents[0].sample.selector.length > 0);
+});

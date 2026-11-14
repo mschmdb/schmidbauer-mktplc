@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 // WCAG 2.x contrast for color pairs, with alpha compositing.
-// Accepts hex, rgb()/rgba(), oklch(), oklab(). oklch/oklab are mapped to sRGB and clamped.
+// Accepts hex, rgb()/rgba(), color(srgb ...), oklch(), oklab(). oklch/oklab are mapped to sRGB and clamped.
 // Usage: node contrast.mjs [--base <color>] <foreground> <background> [<fg> <bg> ...]
 // A translucent background is composited over --base (default white),
 // then a translucent foreground over that result.
@@ -13,13 +13,19 @@ const NAMED = {
 };
 
 function unsupported(value) {
-	return new Error(`Unsupported color "${value}". Use hex, rgb()/rgba(), oklch(), oklab(), white, black or transparent.`);
+	return new Error(`Unsupported color "${value}". Use hex, rgb()/rgba(), color(srgb ...), oklch(), oklab(), white, black or transparent.`);
 }
 
 const alphaOf = (p) => (p === undefined ? 1 : p.endsWith('%') ? parseFloat(p) / 100 : parseFloat(p));
 
-// OKLab to gamma-encoded sRGB (0-255), clamped to the sRGB gamut.
-function oklabToRgb(L, a, b) {
+/**
+ * OKLab to gamma-encoded sRGB (0-255), clamped to the sRGB gamut.
+ * @param {number} L lightness 0-1
+ * @param {number} a green-red axis
+ * @param {number} b blue-yellow axis
+ * @returns {{ r: number, g: number, b: number }}
+ */
+export function oklabToRgb(L, a, b) {
 	const l = (L + 0.3963377774 * a + 0.2158037573 * b) ** 3;
 	const m = (L - 0.1055613458 * a - 0.0638541728 * b) ** 3;
 	const s = (L - 0.0894841775 * a - 1.291485548 * b) ** 3;
@@ -36,6 +42,12 @@ function oklabToRgb(L, a, b) {
 	return { r, g, b: bl };
 }
 
+/**
+ * Parse a CSS color into 0-255 sRGB channels and alpha 0-1.
+ * @param {string} input hex, rgb(), rgba(), color(srgb ...), oklch(), oklab(), white, black or transparent
+ * @returns {{ r: number, g: number, b: number, a: number }}
+ * @throws {Error} for unsupported formats
+ */
 export function parseColor(input) {
 	const value = input.trim().toLowerCase();
 	if (NAMED[value]) return { ...NAMED[value] };
@@ -63,6 +75,16 @@ export function parseColor(input) {
 		return color;
 	}
 
+	const srgb = value.match(/^color\(\s*srgb\s+([^)]*)\)$/);
+	if (srgb) {
+		const parts = srgb[1].split(/[\s,/]+/).filter(Boolean);
+		if (parts.length !== 3 && parts.length !== 4) throw unsupported(input);
+		const unit = (p) => (p.endsWith('%') ? parseFloat(p) / 100 : parseFloat(p)) * 255;
+		const color = { r: unit(parts[0]), g: unit(parts[1]), b: unit(parts[2]), a: alphaOf(parts[3]) };
+		if (Object.values(color).some(Number.isNaN)) throw unsupported(input);
+		return color;
+	}
+
 	const ok = value.match(/^(oklch|oklab)\(([^)]*)\)$/);
 	if (ok) {
 		const parts = ok[2].split(/[\s,/]+/).filter(Boolean);
@@ -84,7 +106,12 @@ export function parseColor(input) {
 	throw unsupported(input);
 }
 
-// Source-over compositing of `top` onto an opaque `bottom`.
+/**
+ * Source-over compositing of `top` onto an opaque `bottom`.
+ * @param {{ r: number, g: number, b: number, a: number }} top
+ * @param {{ r: number, g: number, b: number }} bottom
+ * @returns {{ r: number, g: number, b: number, a: 1 }}
+ */
 export function composite(top, bottom) {
 	const mix = (t, b) => t * top.a + b * (1 - top.a);
 	return { r: mix(top.r, bottom.r), g: mix(top.g, bottom.g), b: mix(top.b, bottom.b), a: 1 };

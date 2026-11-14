@@ -63,3 +63,10 @@ test('parses oklch() and oklab() into sRGB', () => {
 	assert.deepEqual(round(parseColor('oklab(0.452 -0.0325 -0.3115)')), [0, 0, 255]);
 	assert.equal(parseColor('oklch(0.5 0.1 200 / 0.25)').a, 0.25);
 });
+
+test('parses color(srgb ...) with unit channels, percentages and alpha', () => {
+	assert.deepEqual(parseColor('color(srgb 1 0 0)'), { r: 255, g: 0, b: 0, a: 1 });
+	assert.deepEqual(parseColor('color(srgb 0.5 0.5 0.5 / 0.5)'), { r: 127.5, g: 127.5, b: 127.5, a: 0.5 });
+	assert.deepEqual(parseColor('color(srgb 100% 0% 0% / 25%)'), { r: 255, g: 0, b: 0, a: 0.25 });
+	assert.throws(() => parseColor('color(display-p3 1 0 0)'), /Unsupported color/);
+});

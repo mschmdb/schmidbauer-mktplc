@@ -273,10 +273,33 @@
 	}
 	const deep = deepRegions.sort((a, b) => b.depth - a.depth).slice(0, MAX_DEEP_LISTED);
 
+	// ---- colour (C1, C2, C3): raw weighted colours; OKLCH conversion and hue binning happen in lib/colour.mjs ----
+	// Text colours are weighted by text length, background colours by painted area (width x height of the box in px,
+	// overlapping boxes count twice). Interactive elements list their colours as accent candidates.
+	const MAX_INTERACTIVE = 60;
+	const textColors = {};
+	for (const e of textEls) add(textColors, cs(e).color, ownText(e).length);
+	const backgroundColors = {};
+	for (const e of vis) {
+		const bg = cs(e).backgroundColor;
+		if (isTransparent(bg)) continue;
+		const r = e.getBoundingClientRect();
+		add(backgroundColors, bg, Math.round(r.width * r.height));
+	}
+	const interactive = vis
+		.filter((e) => e.matches('button, [role=button], input[type=submit], input[type=button]') || looksLikeButtonLink(e) || (e.tagName === 'A' && e.hasAttribute('href')))
+		.slice(0, MAX_INTERACTIVE)
+		.map((e) => {
+			const s = cs(e);
+			const isLink = e.tagName === 'A' && !looksLikeButtonLink(e);
+			return { kind: isLink ? 'link' : 'button', color: s.color, background: s.backgroundColor, selector: selectorOf(e), box: boxOf(e) };
+		});
+
 	return {
 		limits: { total: allElements.length, scanned: scanned.length, capped: allElements.length > MAX_ELEMENTS },
 		proximity: { headings, labels, groups },
 		similarity: { roles, radii, shadows },
-		region: { distribution, deep }
+		region: { distribution, deep },
+		colour: { text: textColors, backgrounds: backgroundColors, interactive }
 	};
 })();
