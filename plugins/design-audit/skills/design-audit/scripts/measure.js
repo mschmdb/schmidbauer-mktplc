@@ -62,19 +62,54 @@
 			};
 		});
 
-	// Targets under 24 × 24 CSS px (rule 23). WCAG 2.5.8 has exceptions (spacing, inline links); check them by hand.
-	const smallTargets = [...document.querySelectorAll('a, button, [role=button], input, select, summary')]
-		.filter(visible)
-		.filter((e) => {
-			const r = e.getBoundingClientRect();
-			return r.width < 24 || r.height < 24;
+	// Targets under 24 x 24 CSS px (WCAG 2.5.8). Exempt: inline links inside running text, hidden native inputs
+	// (their visible label is measured instead). An undersized target passes on spacing when a 24 px circle
+	// centred on it touches no other target. Counts are signals; confirm by hand.
+	const TARGET_MIN = 24;
+	const isInlineInText = (e) =>
+		e.tagName === 'A' &&
+		cs(e).display === 'inline' &&
+		!!e.parentElement &&
+		e.parentElement.textContent.trim().length > e.textContent.trim().length;
+	const targetBox = (e) => {
+		if (e.tagName === 'INPUT' && !visible(e)) {
+			const label = e.labels && e.labels[0];
+			return label && visible(label) ? label : null;
+		}
+		return visible(e) ? e : null;
+	};
+	const targets = [
+		...new Set(
+			[...document.querySelectorAll('a[href], button, [role=button], input:not([type=hidden]), select, summary')]
+				.map(targetBox)
+				.filter(Boolean)
+		)
+	].filter((e) => !isInlineInText(e));
+	const rects = targets.map((e) => ({ el: e, r: e.getBoundingClientRect() }));
+	const touchesCircle = (a, b) => {
+		const cx = a.r.left + a.r.width / 2;
+		const cy = a.r.top + a.r.height / 2;
+		const small = b.r.width < TARGET_MIN || b.r.height < TARGET_MIN;
+		if (small) {
+			const dx = cx - (b.r.left + b.r.width / 2);
+			const dy = cy - (b.r.top + b.r.height / 2);
+			return Math.hypot(dx, dy) < TARGET_MIN;
+		}
+		const nx = Math.max(b.r.left, Math.min(cx, b.r.right));
+		const ny = Math.max(b.r.top, Math.min(cy, b.r.bottom));
+		return Math.hypot(cx - nx, cy - ny) < TARGET_MIN / 2;
+	};
+	const small = rects
+		.filter(({ r }) => r.width < TARGET_MIN || r.height < TARGET_MIN)
+		.map((a) => ({ ...a, spacingOk: !rects.some((b) => b !== a && touchesCircle(a, b)) }));
+	const smallTargets = {
+		total: small.length,
+		failingSpacing: small.filter((t) => !t.spacingOk).length,
+		items: small.slice(0, 25).map(({ el, r, spacingOk }) => {
+			const label = (el.getAttribute('aria-label') || el.textContent || '').trim().slice(0, 30);
+			return `${Math.round(r.width)}x${Math.round(r.height)} ${el.tagName} ${label}${spacingOk ? ' (spacing ok)' : ''}`;
 		})
-		.slice(0, 25)
-		.map((e) => {
-			const r = e.getBoundingClientRect();
-			const label = (e.getAttribute('aria-label') || e.textContent || '').trim().slice(0, 30);
-			return `${Math.round(r.width)}x${Math.round(r.height)} ${e.tagName} ${label}`;
-		});
+	};
 
 	const headings = [...document.querySelectorAll('h1, h2, h3, h4')].map((e) => {
 		// Only visible parts that differ from the heading in color, style or weight.
