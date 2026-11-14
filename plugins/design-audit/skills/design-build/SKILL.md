@@ -41,6 +41,9 @@ Read `references/design-md.md`. Write each value with its source and status (spe
 ## 4. Tokens, then components
 
 Read `references/process.md`. Reuse existing components and patterns before you write new ones. With a complete token set, add no tokens. Otherwise write the missing tokens first as CSS custom properties.
+
+Where the repo has tests for comparable pages or components, write the new tests first, in the repo's own conventions. Extend its guard lists (axe, sitemap, navigation).
+
 Build components with the states that apply: default, hover, focus-visible, active, disabled, loading, empty, error. Drop the others and note why. Design desktop and mobile together in the same pass. Use real content. Never invent stats, logos or testimonials.
 
 For stack details (Svelte, Tailwind v4, shadcn-style kits, plain CSS), read `references/adapters.md`.
