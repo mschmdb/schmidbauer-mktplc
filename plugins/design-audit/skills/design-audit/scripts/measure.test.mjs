@@ -23,3 +23,13 @@ test('smallTargets skips inline text links and hidden inputs, tests spacing, rep
 	assert.ok(!m.smallTargets.items.some((i) => /terms|Newsletter/.test(i)));
 	assert.ok(m.smallTargets.items.some((i) => /isolated/.test(i) && /spacing ok/.test(i)));
 });
+
+test('paragraphs measure real characters per line inside main content only (item 6)', opts, async () => {
+	const m = await measureFixture('line-length.html');
+	assert.equal(m.paragraphs.length, 1);
+	const p = m.paragraphs[0];
+	assert.ok(p.lines > 3, `lines: ${p.lines}`);
+	assert.ok(p.charsPerLine >= 34 && p.charsPerLine <= 41, `charsPerLine: ${p.charsPerLine}`);
+	assert.ok(p.charsPerLineMax >= p.charsPerLine);
+	assert.equal(p.charsPerLineEstimate, undefined);
+});

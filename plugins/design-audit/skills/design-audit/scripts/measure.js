@@ -45,19 +45,46 @@
 	const sizes = count(textEls.map((e) => cs(e).fontSize));
 	const colors = count(textEls.map((e) => cs(e).color));
 
-	// Characters per line is an estimate: element width divided by an average glyph width of 0.5 em.
-	// Narrow or wide typefaces shift it noticeably. Report it as an estimate (rule 13).
-	const paragraphs = [...document.querySelectorAll('p, li')]
-		.filter((e) => visible(e) && e.textContent.trim().length > 80)
+	// Characters per line, measured: every character gets its own client rect, rects are grouped by line.
+	// charsPerLine is the median over full lines (the last line is usually short); charsPerLineMax is the longest line.
+	// Only running text inside the main content counts, not navigation, header, footer or sidebars.
+	const contentRoot = document.querySelector('main, [role=main]') || document.body;
+	const isChrome = (e) => !!e.closest('nav, header, footer, aside, [role=navigation], [role=banner], [role=contentinfo]');
+	const median = (nums) => {
+		const sorted = [...nums].sort((x, y) => x - y);
+		return sorted.length ? sorted[Math.floor(sorted.length / 2)] : 0;
+	};
+	const measureLines = (el) => {
+		const lines = new Map();
+		const walker = document.createTreeWalker(el, NodeFilter.SHOW_TEXT);
+		const range = document.createRange();
+		for (let node = walker.nextNode(); node; node = walker.nextNode()) {
+			if (node.parentElement && !readable(node.parentElement)) continue;
+			for (let i = 0; i < node.length; i++) {
+				range.setStart(node, i);
+				range.setEnd(node, i + 1);
+				const rect = range.getClientRects()[0];
+				if (!rect || rect.width === 0) continue; // collapsed whitespace has no box
+				const key = Math.round(rect.top / 4);
+				lines.set(key, (lines.get(key) || 0) + 1);
+			}
+		}
+		return [...lines.entries()].sort((x, y) => x[0] - y[0]).map(([, n]) => n);
+	};
+	const paragraphs = [...contentRoot.querySelectorAll('p, li')]
+		.filter((e) => readable(e) && !isChrome(e) && e.textContent.trim().length > 80)
 		.slice(0, 15)
 		.map((e) => {
 			const s = cs(e);
-			const w = e.getBoundingClientRect().width;
+			const counts = measureLines(e);
+			const full = counts.length > 1 ? counts.slice(0, -1) : counts;
 			return {
 				fontSize: s.fontSize,
 				lineHeight: s.lineHeight,
-				width: Math.round(w),
-				charsPerLineEstimate: Math.round(w / (parseFloat(s.fontSize) * 0.5)),
+				width: Math.round(e.getBoundingClientRect().width),
+				lines: counts.length,
+				charsPerLine: median(full),
+				charsPerLineMax: Math.max(0, ...counts),
 				text: e.textContent.trim().slice(0, 50)
 			};
 		});
