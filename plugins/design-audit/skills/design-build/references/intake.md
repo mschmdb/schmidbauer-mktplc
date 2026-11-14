@@ -48,6 +48,8 @@ Pitfalls:
 - Dangling references: code comments that cite a `DESIGN.md` or style guide that does not exist in the repo. Search the history (`git log --all -- DESIGN.md`) and ask the owner. Until then the CSS is the source.
 - Two systems in one file: Tailwind utility breakpoints (`sm:`, `md:`) next to hand-written `@media` values. Count both (`grep -rhoE "(min|max)-width: ?[0-9.]+(rem|px)" src` and the utility prefixes) and record the mismatch.
 - Large token files: record the core roles one by one. Group domain palettes (charts, maps, severity, brand extensions) as one row with the count and the file range.
+- Comments hold intent. Read code comments in CSS, components and tests for design rationale ("row instead of card", "two weights carry the emphasis"). Use them for the Intent section. Label the result "derived, to confirm".
+- Undefined variables: `var(--x)` or `var(--x, fallback)` where `--x` is declared nowhere. Search with `grep -rhoE "var\(--[a-z0-9-]+" src | sort -u` and compare with the declared names. Record each as a gap. A fallback hides the hole.
 - Absence is a result. If the source has no shadows, no dark theme or no motion tokens, write "none" with the source. Do not add them unasked.
 - Sibling projects can share a palette or scale. Note the relation. Do not merge the files.
 
@@ -56,6 +58,7 @@ Pitfalls:
 Run `node ${CLAUDE_SKILL_DIR}/scripts/extract-tokens.mjs <url>`. It needs the dependencies of the design-audit skill (see SKILL.md, step 6). The output lists the custom properties on `:root`, and counts of families, sizes, weights, line heights, colours, spacing values, radii and shadows, for desktop (1440 x 900) and a mobile device.
 
 - Use observed values to fill gaps and to check the tokens. Counts show what the page uses, not what the design allows.
+- It also prints `undefinedProperties` (used by `var()`, declared nowhere; record them as gaps) and `tailwindDefaultsOmitted`. Rule: `--tw-*` is always dropped. A name from Tailwind's default theme (`--text-sm`, `--text-xs--line-height`, `--font-weight-semibold`, `--default-*`, default colour palette) is dropped when it is declared only inside `@layer theme`. A project token with another name stays. A default that the project overrides in `@theme` is dropped as well; check `@theme` in the source.
 - The script reads `:root` and `html` rules only. It does not read theme scopes such as `[data-theme=dark]`. Read those in the source.
 - It scans the loaded page. States (hover, focus, error) and other routes need extra runs or a look at the source.
 - Fonts: the first family of the stack is counted. Check that the file loads (no fallback in use).

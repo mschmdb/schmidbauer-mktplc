@@ -95,3 +95,25 @@ test('mobile uses the smaller heading size', async (t) => {
 	if (skipReason) return t.skip(skipReason);
 	assert.ok(result.viewports.mobile.fontSizes.some((s) => s.value === '32px'));
 });
+
+test('drops Tailwind built-in variables from the observed custom properties', async (t) => {
+	if (skipReason) return t.skip(skipReason);
+	const names = result.viewports.desktop.customProperties.map((p) => p.name);
+	for (const dropped of ['--tw-ring-offset-width', '--default-transition-duration', '--font-weight-semibold', '--text-xs--line-height', '--text-sm', '--color-red-500']) {
+		assert.ok(!names.includes(dropped), `${dropped} must be dropped`);
+	}
+	assert.ok(result.viewports.desktop.tailwindDefaultsOmitted.includes('--text-sm'));
+});
+
+test('keeps project tokens: own names in the theme layer and defaults declared outside it', async (t) => {
+	if (skipReason) return t.skip(skipReason);
+	const names = result.viewports.desktop.customProperties.map((p) => p.name);
+	assert.ok(names.includes('--color-ink'));
+	assert.ok(names.includes('--text-4xl'));
+});
+
+test('reports variables used with var() but defined nowhere', async (t) => {
+	if (skipReason) return t.skip(skipReason);
+	const undef = result.viewports.desktop.undefinedProperties;
+	assert.deepEqual(undef, [{ name: '--container-wide', hasFallback: true }]);
+});
