@@ -4,13 +4,21 @@
 (() => {
 	const ACCENT_MARKER = ' ACCENT ';
 	const cs = (el) => getComputedStyle(el);
+	// Rendered, not transparent, not a 1 px sr-only clip, and inside the document box.
 	const visible = (el) => {
-		const s = cs(el);
+		if (!el.checkVisibility({ opacityProperty: true, visibilityProperty: true, contentVisibilityAuto: true })) return false;
 		const r = el.getBoundingClientRect();
-		return s.display !== 'none' && s.visibility !== 'hidden' && r.width > 0 && r.height > 0;
+		if (r.width <= 1 && r.height <= 1) return false;
+		const docWidth = document.documentElement.scrollWidth;
+		const docHeight = document.documentElement.scrollHeight;
+		const left = r.left + window.scrollX;
+		const top = r.top + window.scrollY;
+		return r.width > 0 && r.height > 0 && left + r.width > 0 && top + r.height > 0 && left < docWidth && top < docHeight;
 	};
+	// Text that a sighted reader can read: visible and not hidden from assistive tech as decoration.
+	const readable = (el) => visible(el) && !el.closest('[aria-hidden="true"]');
 	const textEls = [...document.querySelectorAll('body *')].filter(
-		(el) => visible(el) && [...el.childNodes].some((n) => n.nodeType === 3 && n.textContent.trim())
+		(el) => readable(el) && [...el.childNodes].some((n) => n.nodeType === 3 && n.textContent.trim())
 	);
 	const isTransparent = (c) => c === 'transparent' || /(,\s*|\/\s*)0(\.0+)?%?\)$/.test(c);
 	// Nearest ancestor background that is not transparent; the canvas is white by default.
