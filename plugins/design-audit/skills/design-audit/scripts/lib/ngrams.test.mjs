@@ -53,3 +53,8 @@ test('keeps a phrase with one long token next to short ones', () => {
 	const text = 'made in berlin\nmade in berlin\nmade in berlin';
 	assert.deepEqual(repeatedPhrases(text), [['made in berlin', 3]]);
 });
+
+test('an apostrophe stays inside its word, straight or curly', () => {
+	const text = "Berlin's map\nBerlin\u2019s map\nBerlin's map\nother";
+	assert.deepEqual(repeatedPhrases(text), [["berlin's map", 3]]);
+});

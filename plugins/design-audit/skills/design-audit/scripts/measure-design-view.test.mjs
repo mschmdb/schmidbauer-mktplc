@@ -214,3 +214,12 @@ test('late content: an image and a background image that load after 1500 ms are 
 		assert.ok(late.media.items.every((m) => m.box.w === 100));
 	}, viewport);
 });
+
+test('media share: a large inline svg counts as media, a small icon does not', opts, async () => {
+	const { deriveFirstViewport } = await import('./lib/hierarchy.mjs');
+	const f = deriveFirstViewport((await measureDesignFixture('svelte-root.html', viewport)).firstViewport);
+	const svg = f.media.items.find((m) => m.kind === 'svg');
+	assert.ok(svg, JSON.stringify(f.media.items));
+	assert.deepEqual([svg.box.w, svg.box.h], [400, 300]);
+	assert.equal(f.media.coveredShare > 0, true);
+});

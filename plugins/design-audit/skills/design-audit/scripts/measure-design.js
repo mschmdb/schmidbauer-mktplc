@@ -165,14 +165,25 @@
 		}
 	}
 
-	// Top-level sections in document order: children of <body>, with <main> replaced by its children.
-	// A lone wrapper (a framework root) is opened one level.
+	// Top-level sections in document order: children of <body>, with <main> and `display: contents` wrappers (the root div of a
+	// framework such as SvelteKit) replaced by their children. A lone wrapper (the only element of at least 40 px with more than one
+	// child) is opened, up to MAX_OPEN levels deep, also inside <main>.
 	const MAX_SECTIONS = 30;
-	const expand = (parent) => [...parent.children].flatMap((c) => (c.tagName === 'MAIN' ? [...c.children] : [c]));
-	let top = expand(document.body).filter((e) => visSet.has(e));
-	if (top.length === 1 && top[0].children.length > 1) top = expand(top[0]).filter((e) => visSet.has(e));
-	const sections = top
-		.filter((e) => e.getBoundingClientRect().height >= 40)
+	const MIN_SECTION_HEIGHT = 40;
+	const MAX_OPEN = 4;
+	const isBlock = (e) => visSet.has(e) && e.getBoundingClientRect().height >= MIN_SECTION_HEIGHT;
+	const childrenOf = (parent) => open([...parent.children].flatMap((c) => (c.tagName === 'MAIN' || cs(c).display === 'contents' ? childrenOf(c) : [c])));
+	function open(list) {
+		let current = list;
+		for (let i = 0; i < MAX_OPEN; i++) {
+			const blocks = current.filter(isBlock);
+			if (blocks.length !== 1 || blocks[0].children.length < 2) break;
+			current = [...blocks[0].children].flatMap((c) => (c.tagName === 'MAIN' || cs(c).display === 'contents' ? childrenOf(c) : [c]));
+		}
+		return current;
+	}
+	const sections = childrenOf(document.body)
+		.filter(isBlock)
 		.slice(0, MAX_SECTIONS)
 		.map((e) => ({ selector: selectorOf(e), box: boxOf(e), tag: e.tagName, paddingTop: Math.round(px(cs(e).paddingTop)), paddingBottom: Math.round(px(cs(e).paddingBottom)) }));
 

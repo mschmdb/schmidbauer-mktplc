@@ -4,15 +4,17 @@
 const SHORT_TOKEN = 2;
 
 /**
- * Tokens are lower-cased letters and digits. Short tokens stay, so phrases only join adjacent words.
+ * Tokens are lower-cased letters and digits; an apostrophe inside a word stays ("berlin's"). Short tokens stay, so phrases only join adjacent words.
  * @param {string} line
  * @returns {string[]}
  */
 function wordsOf(line) {
 	return line
 		.toLowerCase()
-		.replace(/[^\p{L}\p{N}\s-]/gu, ' ')
+		.replace(/\u2019/g, "'")
+		.replace(/[^\p{L}\p{N}\s'-]/gu, ' ')
 		.split(/\s+/)
+		.map((w) => w.replace(/^'+|'+$/g, ''))
 		.filter(Boolean);
 }
 

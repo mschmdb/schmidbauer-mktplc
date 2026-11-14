@@ -179,3 +179,9 @@ test('the page scripts call getComputedStyle at most once per element', opts, as
 		}
 	});
 });
+
+test('spacing: sections are found inside a display: contents framework root and nested wrappers', opts, async () => {
+	const raw = await measureDesignFixture('svelte-root.html');
+	assert.deepEqual(raw.spacing.sections.map((s) => s.tag), ['HEADER', 'SECTION', 'SECTION', 'SECTION', 'FOOTER']);
+	assert.deepEqual(raw.spacing.sections.map((s) => s.paddingTop), [0, 64, 64, 96, 24]);
+});

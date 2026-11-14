@@ -227,7 +227,9 @@
 	const GRID = 8;
 	const MAX_MEDIA = 20;
 	const hasBgImage = (e) => /url\(/.test(cs(e).backgroundImage);
-	const mediaEls = firstVis.filter((e) => e.matches('img, video, canvas') || hasBgImage(e)).filter((e) => {
+	// A large inline svg (an illustration, 48 px or more on both sides) counts as media; icons do not.
+	const isLargeSvg = (e) => e instanceof SVGSVGElement && e.getBoundingClientRect().width >= MIN_SVG_SIDE && e.getBoundingClientRect().height >= MIN_SVG_SIDE;
+	const mediaEls = firstVis.filter((e) => e.matches('img, video, canvas') || hasBgImage(e) || isLargeSvg(e)).filter((e) => {
 		const r = e.getBoundingClientRect();
 		return r.width >= 16 && r.height >= 16;
 	});
@@ -242,7 +244,7 @@
 	}
 	const media = {
 		coveredShare: Math.round((covered.reduce((sum, v) => sum + v, 0) / (cols * rows)) * 1000) / 1000,
-		items: mediaEls.slice(0, MAX_MEDIA).map((e) => ({ kind: e.matches('img, video, canvas') ? e.tagName.toLowerCase() : 'background-image', selector: selectorOf(e), box: boxOf(e) }))
+		items: mediaEls.slice(0, MAX_MEDIA).map((e) => ({ kind: mediaKind(e), selector: selectorOf(e), box: boxOf(e) }))
 	};
 
 	// Fixed or sticky elements that cover more than 10 percent of the viewport (cookie banner, overlay, big sticky header).
