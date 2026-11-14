@@ -4,6 +4,7 @@ import { chromium } from 'playwright';
 import { readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
+import { runDesignScripts } from './design-scripts.mjs';
 
 const here = dirname(fileURLToPath(import.meta.url));
 export const measureSource = readFileSync(join(here, 'measure.js'), 'utf8');
@@ -67,4 +68,14 @@ export async function withFixture(name, fn, contextOptions = { viewport: { width
  */
 export function measureFixture(name, contextOptions) {
 	return withFixture(name, (page) => page.evaluate(measureSource), contextOptions);
+}
+
+/**
+ * Run the design scripts on a fixture and return the merged raw object (before lib post-processing).
+ * @param {string} name fixture file name
+ * @param {import('playwright').BrowserContextOptions} [contextOptions]
+ * @returns {Promise<Record<string, any>>}
+ */
+export function measureDesignFixture(name, contextOptions) {
+	return withFixture(name, (page) => runDesignScripts(page), contextOptions);
 }
