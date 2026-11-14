@@ -56,3 +56,42 @@ test('typography: icon fonts and code-only families are excluded', opts, async (
 	assert.ok(!names.some((n) => /awesome|mono/i.test(n)), names.join(','));
 	assert.ok(names.includes('Inter'), 'hash suffix stripped');
 });
+
+test('spacing: clean fixture sits on a 4 px grid, violation fixture does not', opts, async () => {
+	const { deriveSpacing } = await import('./lib/spacing.mjs');
+	const clean = deriveSpacing((await measureDesignFixture('design-clean.html')).spacing);
+	const messy = deriveSpacing((await measureDesignFixture('design-gestalt-violations.html')).spacing);
+	assert.ok(clean.fit4Exact >= 0.9, `clean fit4Exact ${clean.fit4Exact}`);
+	assert.ok(messy.fit4Exact < clean.fit4Exact, `messy ${messy.fit4Exact}`);
+	assert.ok(messy.distinct > clean.distinct, `distinct ${messy.distinct} vs ${clean.distinct}`);
+	assert.ok(clean.histogram.every((h) => h.px > 0));
+	assert.equal(clean.sections.items[0].tag, 'HEADER');
+	assert.equal(clean.sections.items[0].paddingTop, 16);
+});
+
+test('spacing: side margins of text blocks are measured to the viewport edge on mobile', opts, async () => {
+	const { deriveSpacing } = await import('./lib/spacing.mjs');
+	const raw = await measureDesignFixture('design-gestalt-violations.html', { viewport: { width: 390, height: 800 } });
+	const sp = deriveSpacing(raw.spacing);
+	assert.equal(sp.sideMargins.minLeft, 23);
+	assert.equal(sp.sideMargins.minRight, 23);
+	assert.deepEqual(sp.sideMargins.narrow, []);
+});
+
+test('alignment: jittering left edges give separate clusters, aligned columns do not', opts, async () => {
+	const { deriveAlignment } = await import('./lib/spacing.mjs');
+	const jitter = deriveAlignment((await measureDesignFixture('design-gestalt-violations.html')).alignment);
+	const clean = deriveAlignment((await measureDesignFixture('design-clean.html')).alignment);
+	const xs = jitter.top.map((c) => c.x);
+	const base = Math.min(...xs);
+	for (const offset of [5, 11, 17]) assert.ok(xs.includes(base + offset), `edge at base+${offset} in ${xs}`);
+	assert.ok(jitter.distinct >= 4);
+	assert.ok(clean.distinct <= 5, `clean distinct ${clean.distinct}`);
+	assert.ok(clean.top[0].samples[0].selector.length > 0);
+});
+
+test('limits: scanned elements are reported and the cap does not bite on small pages', opts, async () => {
+	const raw = await measureDesignFixture('design-clean.html');
+	assert.equal(raw.limits['measure-design.js'].capped, false);
+	assert.ok(raw.limits['measure-design.js'].scanned > 10);
+});
