@@ -1,94 +1,98 @@
 ---
 name: design-audit
-description: Audits a live website's visual design, UX, motion and copy against 32 bundled guidelines (Gestalt as the base, WCAG 2.2, established UX heuristics, no generic AI look, no AI-slop copy). Measures in a real or headless browser with axe-core, desktop and mobile screenshots, a scroll series and load-animation frames, and reads the source repository when one is available. Every finding cites a rule and an evidence level. Use this skill when the user gives a URL and asks to audit, review, critique or check a site's design, UX, accessibility, typography or animation, or to check it against design guidelines, even if they only say "what do you think of this page". Not for building or redesigning UI, and not for reviewing a code diff.
+description: Audits a live website's visual design and how people perceive and find their way around it, on desktop and mobile, against bundled principles (Gestalt as the foundation, typography, spacing and layout, colour, hierarchy, perception and orientation, craft against the generic AI look, copy, motion). Measures in a headless browser and runs a simulated five-second glance test with blind observers. Every finding cites a rule, an evidence class, a severity and a measured value. Use when the user gives a URL and asks to audit, review, critique or check a site's design, UX, layout or typography, or asks "what do you think of this page". Not for building or redesigning UI (use design-build), not for reviewing a code diff, and not an accessibility audit (it runs axe-core only as a floor).
+argument-hint: [url] [visual|perception|all]
 ---
 
 # Design audit
 
-Audit a website against `references/guidelines.md`. The guidelines are the rule source; this file describes the procedure. If the user names their own guideline file, use it instead and cite its numbers.
+Audit a website against `references/principles.md`. This file lists the steps. The references hold the knowledge and load when a step names them.
+
+Scope argument: `visual` checks blocks G, T, S, C, H and K. `perception` checks block P and runs the glance test. The default is `all`.
 
 ## 1. Load the rules
 
-Read `${CLAUDE_SKILL_DIR}/references/guidelines.md`. Cite findings by rule number and short name ("rule 23, targets large and close"), so a reader can follow them without the file.
+Read `${CLAUDE_SKILL_DIR}/references/principles.md`. Cite findings by rule ID and short name, for example "G3 Common region". A user-supplied rule file replaces it. Then cite that file's IDs.
+
+The rule file defines the evidence classes: research, convention, rule of thumb.
 
 ## 2. Identify sources
 
-- Is there a repository (local checkout or a hosted one)? Then read the code as well. Read only: the audit must not change the project it judges. For hosted code, use the host's API, e.g. `gh api repos/<owner>/<repo>/contents/<path>?ref=<branch>` on GitHub.
-- Read the branch that is deployed, which is not always the default branch. Fetch local checkouts against their remote and report if they are behind; otherwise code and page may disagree.
-- Look for an earlier audit where reports are kept (step 7). If one exists, compare and name what changed.
+- **Repository.** Read the code when a checkout or hosted repo exists. Read only: the audit must not change the project. For hosted code use the host's API, e.g. `gh api repos/<owner>/<repo>/contents/<path>?ref=<branch>`. Read the deployed branch. Fetch local checkouts against their remote and report if they are behind.
+- **Direction.** Look for a project `DESIGN.md` or a stated direction. Rule K2 ("default or decision?") needs it. A given corporate design overrides K (K3).
+- **Earlier audit.** Look where reports are kept (step 8). Compare and name what changed.
+- **Owner questions.** The O block lists what a URL cannot answer (users, tests, context of use). Collect them for the report.
 
 ## 3. Measure in the browser
 
-### Setup (once)
+Setup, once. Node.js 18 or later. In `${CLAUDE_SKILL_DIR}/scripts`, install with the user's package manager (`pnpm install`, `npm install`, `yarn` or `bun install`), then run `playwright install chromium` through it (`pnpm exec`, `npx`, `yarn` or `bunx`).
 
-The scripts need Node.js 18 or later. In `${CLAUDE_SKILL_DIR}/scripts`, install the dependencies with the user's package manager (`npm install`, `pnpm install`, `yarn` or `bun install`), then install the browser:
-
-```bash
-npx playwright install chromium
-```
-
-### Run
+Run:
 
 ```bash
 node ${CLAUDE_SKILL_DIR}/scripts/audit.mjs <url> <temp-dir>/design-audit/<slug>
 ```
 
-Use the system temp directory and a short slug for the page. Run the script again for each subpage. It writes `audit.json` and screenshots: full page, load-animation frames at 300/1000/2500 ms and a scroll series. Read `${CLAUDE_SKILL_DIR}/references/audit-output.md` when interpreting the fields.
+Use the system temp directory and a short slug. Run it again for each subpage.
 
-### First viewport (rule 16)
+The script measures desktop (1440 x 900) and mobile (a Playwright device descriptor) in full. Per viewport it writes load frames, a first-viewport screenshot with greyscale and blurred copies, a full-page screenshot, a scroll series, and the measurements `measure`, `design`, `pixels` and `focus`. axe-core runs on desktop only. Read `${CLAUDE_SKILL_DIR}/references/audit-output.md` when you interpret fields or file names.
 
-Before anything else, judge `desktop-t2500.png` and `mobile-t2500.png`: the first viewport, without scrolling or interaction. Write down in one sentence what the page is for and what the main action is, using only what is visible there. If that is not possible, or if it only works after the load animation ends, that is a rule 16 finding. Compare with `t300` and `t1000`: content that appears late counts against the 3-second target. `measure.firstViewport` lists the headings, text and actions visible above the fold.
+If the run fails:
 
-Look at the screenshots, not only the JSON. The numbers say where to look; the pictures say what is there.
+- `Cannot find package 'playwright'` or a missing browser: run the setup step.
+- `notes` in `audit.json` lists timeouts, an unsettled page or a failed measurement. Report those parts as "Not checked".
+- Status 401, 403 or 429, a login page or a bot wall: the measurements describe the wall. Ask for access or use a real browser session.
+- A cookie banner covers the page: name it as a finding if it blocks content. Judge the rest from the scroll series or a real browser after dismissing it.
 
-A real browser tool (for example Claude in Chrome) helps for interaction, hover states and judgment. Run `audit.mjs` anyway for the measurements. To get the same page measurements in another browser tool, evaluate the contents of `scripts/measure.js` in the page; it returns one object.
+## 4. Glance test
 
-### Contrast
+Skip this step for scope `visual`. Otherwise follow `${CLAUDE_SKILL_DIR}/references/glance-test.md`. Observers are fresh subagents that see only the screenshot. Never answer the questions yourself.
+
+## 5. Judge
+
+Go block by block. Judge desktop and mobile separately.
+
+- The measurements say where to look. The crops say what is there. Judge detail on crops, not on the downscaled full page.
+- Cut a crop for every element you cite. Boxes in `audit.json` are `{x, y, w, h}` in document pixels:
+
+```bash
+node ${CLAUDE_SKILL_DIR}/scripts/crop.mjs <png> <x> <y> <w> <h> <out.png>
+```
+
+- Note the locator, crop path and measured value for each finding as you go. The report needs all three.
+- Check the greyscale and blurred first viewport for H2, and the load frames for M1 and P2.
+- Before a Gestalt finding (G1 to G6), look for a conflicting cue (G10). Name both cues in the finding.
+- For colour pairs, compute contrast:
 
 ```bash
 node ${CLAUDE_SKILL_DIR}/scripts/contrast.mjs [--base <color>] '<fg>' '<bg>' ...
 ```
 
-Accepts hex (3, 4, 6, 8 digits), `rgb()`/`rgba()`, `oklch()`, `oklab()` and `white`/`black`/`transparent`, which covers what browsers report as computed colors. oklch/oklab outside the sRGB gamut are clamped. Translucent colors are composited: the background over `--base` (default white, or the color actually behind it), then the foreground over that. Other formats (`lab()`, `color()`, named colors) need converting to sRGB first.
+  It accepts hex, `rgb()`, `rgba()`, `oklch()`, `oklab()`, `white`, `black` and `transparent`. Translucent colours are composited over `--base` (default white). Convert `lab()` and `color()` to sRGB first.
 
-### If the run fails
+A real browser tool (for example Claude in Chrome) helps for hover states and interaction. To get the page measurements in another tool, evaluate `scripts/measure.js` in the page. `audit-output.md` lists what that returns.
 
-- `Cannot find package 'playwright'` or a missing browser: run the setup step.
-- `notes` in `audit.json` lists timeouts or a failed viewport. Report those parts as "Not checked".
-- Status 401/403/429, a login page or a bot wall in the screenshots: the measurements describe the wall. Ask the user for access or use a real browser session.
-- A cookie banner covers the page: name it as a finding if it blocks content (rules 2, 20), and judge the rest from the scroll series or a real browser after dismissing it.
+## 6. Pitfalls
 
-## 4. Pitfalls
+- Full-page screenshots hide sticky and scroll-driven animation. An apparently empty area is often a scroll track. Check the scroll series and the code before judging.
+- WebGL needs SwiftShader headless. The script sets it. Check whether the page renders a canvas.
+- Tells in `measure.tells` are counts, not verdicts. Ask "default or decision?" (K2).
+- Count repetition across pages: `repeated` per page, plus sentences that appear verbatim on several pages.
+- Read content files. They often hold builder notes that show label drift between content and page.
+- A rule of thumb never becomes a finding. Report it as an observation with the measured value.
+- Prominence and pixel values are predictions, not eye-tracking.
+- The mobile viewport is what `audit.json` says (`mobile.viewport`, `mobile.device`). Do not assume 390 x 844.
+- A value outside one convention but inside another is not a finding (see T3, T5, P8).
 
-- **Full-page screenshots hide sticky and scroll-driven animation.** An apparently empty area is often a scroll track. Check the scroll series and the code before judging.
-- **WebGL needs SwiftShader headless** (set in the script). Check whether the page sets a class like `has-gl` or renders a canvas.
-- **Judging animation means two questions:** does it fit the content (rule 10)? Is it needed (rules 2, 31)? Read order and logic from the code: does it show technique (draw order) or content?
-- **Recompute timing.** For scroll-driven animation, compare where the sticky section ends with where the animation ends. If the climax only arrives while scrolling away, that violates rule 25.
-- **Read content files.** They often hold builder notes ("do not claim") that show honesty (rule 14) or label drift between content and page.
-- **AI-look signals are counts, not verdicts.** Each trait can be right when the project gives a reason, such as mono for real timestamps or numbers for a real sequence.
-- **Count repetition across the whole site:** `repeated` in `audit.json` per page, plus sentences that appear verbatim on several pages.
-- **Gestalt similarity:** the same form for unlike content (an offer, a tool and a link in identical cards) is a finding.
-- **Automated checks miss many accessibility problems.** axe results are a floor, not a pass. Walk the focus order and check the reading order yourself.
+## 7. Report
 
-## 5. Evidence levels
+Write plain, specific prose. Apply a writing-style skill such as `no-ai-slop` when it is installed.
 
-Label every finding with its origin, so the reader knows how much weight it carries:
 
-- **seen in browser** (screenshot, measurement)
-- **from code** (file and line)
-- **computed** (contrast, timing, estimate)
-- **interpretation** (model reading; say so explicitly)
+Follow `${CLAUDE_SKILL_DIR}/references/report.md`: severity 0 to 4, required fields per finding, a refutation pass, findings and observations in separate lists, and stated limits.
 
-Correct errors from an earlier version openly rather than overwriting them.
+axe results are a floor (A1), not an accessibility audit. Recommend a dedicated accessibility audit.
 
-## 6. Report format
-
-- Verdict in one sentence first.
-- Findings by weight, each with rule number, evidence level and evidence.
-- "Met" briefly; "Not checked" explicitly, with the reason.
-- Biggest lever last.
-- Plain, specific prose. If a writing-style skill such as `no-ai-slop` is installed, apply it.
-
-## 7. Save the report
+## 8. Save
 
 Save where the user asks. Default: `./design-audit-<yyyy-mm>.md` in the current working directory. Screenshots stay in the temp directory unless the user wants them kept.

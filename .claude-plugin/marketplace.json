@@ -14,7 +14,7 @@
     {
       "name": "design-audit",
       "source": "./plugins/design-audit",
-      "description": "Audit a live website against 32 design and UX guidelines with browser measurements, screenshots and evidence-labeled findings."
+      "description": "Two skills that share one rule file: design-audit checks a live website's visual design and perception on desktop and mobile with browser measurements and a simulated glance test, and design-build applies the same rules while you build or redesign UI."
     },
     {
       "name": "no-ai-slop",

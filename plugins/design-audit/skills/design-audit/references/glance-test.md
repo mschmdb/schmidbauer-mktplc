@@ -10,7 +10,7 @@ You know the URL, the code and the whole page. Your own reading of the first vie
 
 ## 2. Inputs
 
-- Use the first-viewport screenshot per viewport (desktop and mobile), taken 2500 ms after navigation. The audit script writes them. `audit-output.md` lists the exact file names.
+- Use the load frame taken 2500 ms after navigation, per viewport: `desktop-t2500.png` and `mobile-t2500.png`. It shows what a visitor has seen by then. Do not use `<viewport>-viewport.png`, which is taken after the page has settled.
 - Copy each to a neutral name in the temp directory, for example `a.png` for desktop and `b.png` for mobile. A file name must leak nothing.
 
 ## 3. Observers

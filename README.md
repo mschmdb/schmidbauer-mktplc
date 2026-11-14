@@ -5,7 +5,7 @@ Claude Code plugins by Matze Schmidbauer.
 | Plugin | What it does |
 |---|---|
 | [codex-review](plugins/codex-review) | Code review by OpenAI Codex in two stages: one model finds issues and quotes the code, a second model checks each finding against the repository. |
-| [design-audit](plugins/design-audit) | Audits a live website against 32 design and UX guidelines, with browser measurements, screenshots and evidence for every finding. |
+| [design-audit](plugins/design-audit) | Audits a live website's design and perception with browser measurements and a simulated glance test (design-audit), and builds UI against the same rules (design-build). |
 | [no-ai-slop](plugins/no-ai-slop) | Writing rules against AI-sounding prose and made-up facts, with pattern catalogues for English and German. |
 | [wakemux](https://github.com/mschmdb/wakemux) | Runs side tasks as Claude Code threads in cmux worktrees that report back to the main session. |
 

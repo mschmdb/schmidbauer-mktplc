@@ -114,7 +114,7 @@ On screens the direct evidence is thin. One study found that spatial grouping an
 ### T3 Line length
 **Principle.** Lines of moderate length read comfortably.
 **Violation.** Body lines far wider or narrower than the conventions.
-**Check.** Measure characters per line in body text and report the value against all three conventions. Butterick: 45 to 90. Material 3: 40 to 60. Baymard: 50 to 75, ceiling 80. Flag only values outside all three. `charsPerLineEstimate` assumes 0.5 em per glyph, so report it as an estimate. No verified figure exists for mobile.
+**Check.** Measure characters per line in body text and report the value against all three conventions. Butterick: 45 to 90. Material 3: 40 to 60. Baymard: 50 to 75, ceiling 80. Flag only values outside all three. `measure.paragraphs[].charsPerLine` holds the measured median of full lines. No verified figure exists for mobile.
 **Evidence.** convention. Source: [Butterick](https://practicaltypography.com/line-length.html), [Material 3](https://m3.material.io/foundations/layout/breakpoints/overview), [Baymard](https://baymard.com/blog/line-length-readability)
 
 ### T4 Line height
@@ -144,7 +144,7 @@ On screens the direct evidence is thin. One study found that spatial grouping an
 ### T8 Font loading and layout shift
 **Principle.** Fonts load without making the layout jump.
 **Violation.** Text reflows after the font swaps. Fonts ship in heavy formats without `font-display`.
-**Check.** Cumulative layout shift: good at 0.1 or less, poor above 0.25. Check for WOFF2, `font-display` and `size-adjust` on the fallback.
+**Check.** The script does not measure this. Compare the load frames for text that reflows. With a repository, check for WOFF2, `font-display` and `size-adjust` on the fallback. Cumulative layout shift counts as good at 0.1 or less and poor above 0.25.
 **Evidence.** convention. Source: [web.dev CLS](https://web.dev/articles/cls), [web.dev font best practices](https://web.dev/articles/font-best-practices)
 
 ## S Spacing and layout
@@ -260,7 +260,7 @@ On screens the direct evidence is thin. One study found that spatial grouping an
 ### P2 First viewport
 **Principle.** The value proposition and primary action sit in the first viewport.
 **Violation.** The first viewport holds only a logo, an image or a banner. A clean section edge at the fold suggests the page ends there (false floor).
-**Check.** h1 present, its size and word count, share covered by image or video, overlay or banner area, content that appears after 1000 ms. Desktop: 57 % of viewing time above the fold, 74 % in the first two screenfuls. No verified fold figure exists for mobile, so ask the same question on the mobile viewport.
+**Check.** h1 present, its size and word count, share covered by image or video, overlay or banner area, content that appears after 1000 ms (`design.firstViewport`). Desktop: 57 % of viewing time above the fold, 74 % in the first two screenfuls. No verified fold figure exists for mobile, so ask the same question on the mobile viewport.
 **Evidence.** research. Source: [NN/g scrolling and attention](https://www.nngroup.com/articles/scrolling-and-attention/)
 
 ### P3 Placement
@@ -296,7 +296,7 @@ On screens the direct evidence is thin. One study found that spatial grouping an
 ### P8 Mobile targets and chrome
 **Principle.** Touch targets are large and spaced, and chrome stays small next to content.
 **Violation.** Small, tight targets. Large banners and interstitials. Carousels with autoplay. Multi-column forms.
-**Check.** Target size against: 1 cm by 1 cm with about 2 mm gap (NN/g); 48 by 48 dp with 8 dp gap (Material 3); 44 by 44 pt (Apple). `mobileSmallTargets` lists elements under 24 by 24 CSS px, which is an own screening value, not a convention. Banners take "a small fraction of the screen". Carousels: at most 5 frames, no autoplay on mobile. Sessions last 72 s on mobile against 150 s on desktop. Fewer than half of people hold the phone with one hand, so do not use thumb-zone maps.
+**Check.** Target size against: 1 cm by 1 cm with about 2 mm gap (NN/g); 48 by 48 dp with 8 dp gap (Material 3); 44 by 44 pt (Apple). `mobile.measure.smallTargets` lists elements under 24 by 24 CSS px, which is an own screening value, not a convention. Banners take "a small fraction of the screen". Carousels: at most 5 frames, no autoplay on mobile. Sessions last 72 s on mobile against 150 s on desktop. Fewer than half of people hold the phone with one hand, so do not use thumb-zone maps.
 **Evidence.** convention. Source: [NN/g touch target](https://www.nngroup.com/articles/touch-target-size/), [Material 3 structure](https://m3.material.io/foundations/designing/structure), [Apple HIG accessibility](https://developer.apple.com/design/human-interface-guidelines/accessibility), [Google interstitials](https://developers.google.com/search/docs/appearance/avoid-intrusive-interstitials), [NN/g carousels](https://www.nngroup.com/articles/designing-effective-carousels/), [NN/g mobile UX](https://www.nngroup.com/articles/mobile-ux/), [UXmatters grip study](https://www.uxmatters.com/mt/archives/2017/03/design-for-fingers-touch-and-people-part-1.php)
 
 ## K Craft
@@ -358,7 +358,7 @@ K leads with positive craft. The generic-AI-look traits are secondary evidence.
 ### M3 Scroll-driven timing
 **Principle.** Content is readable without waiting for an animation.
 **Violation.** Content hidden until a scroll trigger fires late. Content invisible in the full-page capture.
-**Check.** Content that appears after 1000 ms. Whether content that starts hidden shows in the scroll series. Link to G8 when groups move apart.
+**Check.** Content that appears after 1000 ms (`design.firstViewport.lateContent`). Whether content that starts hidden shows in the scroll series. Link to G8 when groups move apart.
 **Evidence.** rule of thumb.
 
 ## A Accessibility floor
