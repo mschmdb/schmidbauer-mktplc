@@ -67,6 +67,14 @@ test('prominence: on the clean page the h1 leads and only the filled link counts
 	assert.equal(byLabel('See our work').kind, 'text', 'outlined: no fill');
 });
 
+test('prominence: a filled primary button outranks an outlined secondary one of equal size', opts, async () => {
+	const { rankProminence } = await import('./lib/prominence.mjs');
+	const raw = await measureDesignFixture('prominence-buttons.html', viewport);
+	const items = rankProminence(raw.prominence.candidates, { width: 1000, height: 600 }).items;
+	const rank = (text) => items.find((i) => i.label === text).rank;
+	assert.ok(rank('Filled') < rank('Outlined'), `filled ${rank('Filled')}, outlined ${rank('Outlined')}`);
+});
+
 test('tells: generic fixture shows gradient text, glass, emoji icons, identical cards and builder fingerprints', opts, async () => {
 	const { deriveTells } = await import('./lib/tells.mjs');
 	const { deriveTypography } = await import('./lib/typography.mjs');

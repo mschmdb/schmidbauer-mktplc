@@ -232,7 +232,8 @@
 	};
 	const isButton = (e) => e.matches('button, [role=button], input[type=submit], a[href]') && isFilled(e);
 	const prominenceCandidates = [
-		...firstText.map((e) => candidateOf(e, isButton(e) ? 'button' : 'text', textRect(e))),
+		// A filled button counts with its whole box: the fill is what the eye sees, not only the label.
+		...firstText.map((e) => (isButton(e) ? candidateOf(e, 'button', e.getBoundingClientRect()) : candidateOf(e, 'text', textRect(e)))),
 		...firstVis.filter((e) => e.matches('img, video, canvas') && e.getBoundingClientRect().width >= MIN_MEDIA && e.getBoundingClientRect().height >= MIN_MEDIA).map((e) => candidateOf(e, 'media', e.getBoundingClientRect()))
 	]
 		.filter((c) => c.area > 0)

@@ -1,9 +1,10 @@
 // Prominence ranking (H2): a PREDICTION of which first-viewport elements draw attention first. It is not eye tracking.
 //
 // score = areaShare x contrast x type x position
-//   areaShare  visible area of the element's text (or media box) divided by the viewport area
-//   contrast   (WCAG contrast ratio - 1) / 20, floor 0.02; the stronger of text-on-background and background-on-surround
-//              (so a dark button on a white page counts even when its label is weak); media boxes use 0.5
+//   areaShare  visible area of the element's text (a filled button: its whole box; media: its box) divided by the viewport area
+//   contrast   (WCAG contrast ratio - 1) / 20, floor 0.02; the larger of label-on-own-fill and own-fill-on-the-background-behind
+//              (so a filled button counts even when its label is weak; an outlined one has no fill and only its label counts);
+//              media boxes use 0.5
 //   type       (font size / 16 px) x (font weight / 400), weight clamped to 100..900
 //   position   1 - 0.3 x (centre x / width) - 0.3 x (centre y / height), clamped to 0.4..1: favours the top left
 // The factors are the choice of this rule set (own values), loosely following left and top bias in eye-tracking
@@ -12,7 +13,7 @@ import { pairRatio } from '../contrast.mjs';
 
 /** Description written into the output next to the ranking. */
 export const METHOD =
-	'prediction, not eye tracking: score = area share of the viewport x ((contrast ratio - 1) / 20) x (font size / 16) x (font weight / 400) x position prior (1 - 0.3 x x / width - 0.3 x y / height, min 0.4); media use contrast 0.5';
+	'prediction, not eye tracking: score = area share of the viewport (filled buttons: whole box, others: text) x ((larger of label-on-fill and fill-on-surround contrast ratio - 1) / 20) x (font size / 16) x (font weight / 400) x position prior (1 - 0.3 x x / width - 0.3 x y / height, min 0.4); media use contrast 0.5';
 /** Number of ranked elements (own value). */
 export const TOP_PROMINENT = 8;
 const CONTRAST_FLOOR = 0.02;
