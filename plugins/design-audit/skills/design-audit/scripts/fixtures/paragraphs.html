@@ -1,0 +1,23 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><title>Paragraph structure</title>
+<style>
+body { margin: 0; font: 16px/1.5 monospace; }
+main { width: 60ch; }
+ul { margin: 0; padding: 0; list-style: none; }
+.row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.card { border: 1px solid #999; padding: 8px; }
+.card time { display: block; font-size: 12px; }
+svg { display: block; overflow: hidden; }
+</style></head>
+<body>
+<main>
+<h1>Heading that is long enough to pass eighty characters if it were counted as running text by mistake</h1>
+<p id="body-p">Running text in a paragraph with <a href="/x">an inline link</a> that wraps over several lines in this narrow column of sixty characters.</p>
+<ul>
+<li id="run-li">A list item with running text and <em>inline emphasis</em> that also wraps over a few lines in the narrow column of sixty characters.</li>
+<li class="row" id="grid-li"><span>Phase 1 Fachpruefung of the whole website with scope and questions</span><span>Frage, Umfang and the results that come out of the first week of work</span></li>
+<li class="card" id="card-li"><time>7 November 2026</time><h3>Berlin in squares, twelve districts as a composition</h3><p id="card-p">Twelve districts as a composition, each with its own colour and a short note beside it.</p></li>
+<li id="svg-li">Short running text of about ninety characters that sits beside a figure whose own text is far longer than that.<svg width="300" height="30"><text x="0" y="20">SVGTEXT SVGTEXT SVGTEXT SVGTEXT SVGTEXT SVGTEXT SVGTEXT SVGTEXT SVGTEXT SVGTEXT SVGTEXT SVGTEXT</text></svg></li>
+</ul>
+</main>
+</body></html>

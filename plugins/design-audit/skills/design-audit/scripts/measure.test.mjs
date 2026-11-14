@@ -51,3 +51,13 @@ test('repeated phrases ignore nav, footer and hidden text (item 9)', opts, async
 	assert.deepEqual(out.repeated, []);
 	assert.equal(out.contentText, undefined);
 });
+
+test('paragraphs measure text blocks: p, and li with running text only; headings, grid rows, card items and svg text stay out', opts, async () => {
+	const m = await measureFixture('paragraphs.html');
+	assert.deepEqual(m.paragraphs.map((p) => p.selector), ['#body-p', '#run-li', '#card-p', '#svg-li']);
+	assert.ok(m.paragraphs.every((p) => p.box.w > 0 && p.box.h > 0), 'every entry has a box');
+	const byId = Object.fromEntries(m.paragraphs.map((p) => [p.selector, p]));
+	assert.ok(byId['#card-p'].charsPerLine >= 30, `card text alone: ${byId['#card-p'].charsPerLine}`);
+	assert.ok(byId['#svg-li'].charsPerLineMax <= 61, `svg text is not a line of the item: ${byId['#svg-li'].charsPerLineMax}`);
+	assert.equal(byId['#body-p'].text.startsWith('Running text'), true);
+});

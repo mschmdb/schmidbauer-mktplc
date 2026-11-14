@@ -4,6 +4,33 @@
 (() => {
 	const ACCENT_MARKER = ' ACCENT ';
 	const cs = (el) => getComputedStyle(el);
+	const boxOf = (el) => {
+		const r = el.getBoundingClientRect();
+		return { x: Math.round(r.left + window.scrollX), y: Math.round(r.top + window.scrollY), w: Math.round(r.width), h: Math.round(r.height) };
+	};
+	// Stable CSS selector that resolves to exactly this element: #id when unique, else tag:nth-of-type segments.
+	// Tries 5 levels first (short); when that matches more than one element, it uses the full path up to <html>.
+	const pathOf = (el, maxDepth) => {
+		const parts = [];
+		for (let n = el; n && n.nodeType === 1 && parts.length < maxDepth; n = n.parentElement) {
+			if (n.id && document.querySelectorAll(`#${CSS.escape(n.id)}`).length === 1) {
+				parts.unshift(`#${CSS.escape(n.id)}`);
+				break;
+			}
+			const tag = n.tagName.toLowerCase();
+			if (n === document.documentElement) {
+				parts.unshift(tag);
+				break;
+			}
+			const same = [...n.parentElement.children].filter((c) => c.tagName === n.tagName);
+			parts.unshift(same.length > 1 ? `${tag}:nth-of-type(${same.indexOf(n) + 1})` : tag);
+		}
+		return parts.join(' > ');
+	};
+	const selectorOf = (el) => {
+		const short = pathOf(el, 5);
+		return document.querySelectorAll(short).length === 1 ? short : pathOf(el, Infinity);
+	};
 	// Rendered, not transparent, not a 1 px sr-only clip, and inside the document box.
 	const visible = (el) => {
 		if (!el.checkVisibility({ opacityProperty: true, visibilityProperty: true, contentVisibilityAuto: true })) return false;
@@ -56,12 +83,21 @@
 		const sorted = [...nums].sort((x, y) => x - y);
 		return sorted.length ? sorted[Math.floor(sorted.length / 2)] : 0;
 	};
+	// Text of figures (svg, canvas) is not running text.
+	const inFigure = (node) => !!node.parentElement?.closest('svg, canvas');
+	const MEDIA_CHILD = /^(IMG|PICTURE|VIDEO|CANVAS|SVG|BR)$/i;
+	const runningNodes = (el) => {
+		const nodes = [];
+		const walker = document.createTreeWalker(el, NodeFilter.SHOW_TEXT);
+		for (let node = walker.nextNode(); node; node = walker.nextNode()) {
+			if (node.parentElement && readable(node.parentElement) && !inFigure(node)) nodes.push(node);
+		}
+		return nodes;
+	};
 	const measureLines = (el) => {
 		const lines = new Map();
-		const walker = document.createTreeWalker(el, NodeFilter.SHOW_TEXT);
 		const range = document.createRange();
-		for (let node = walker.nextNode(); node; node = walker.nextNode()) {
-			if (node.parentElement && !readable(node.parentElement)) continue;
+		for (const node of runningNodes(el)) {
 			for (let i = 0; i < node.length; i++) {
 				range.setStart(node, i);
 				range.setEnd(node, i + 1);
@@ -73,21 +109,32 @@
 		}
 		return [...lines.entries()].sort((x, y) => x[0] - y[0]).map(([, n]) => n);
 	};
+	// A text block holds running text: a paragraph, or a list item (display list-item or block) that has no block child except figures.
+	// Grid and flex rows, list items with a heading or a paragraph inside, and headings are not text blocks.
+	const isTextBlock = (e) => {
+		if (e.tagName === 'P') return true;
+		if (e.tagName !== 'LI' || !['list-item', 'block'].includes(cs(e).display)) return false;
+		return ![...e.children].some((c) => !MEDIA_CHILD.test(c.tagName) && !cs(c).display.startsWith('inline') && cs(c).display !== 'none');
+	};
+	const runningText = (el) => runningNodes(el).map((n) => n.data).join('').replace(/\s+/g, ' ').trim();
+	const MAX_PARAGRAPHS = 15;
 	const paragraphs = [...contentRoot.querySelectorAll('p, li')]
-		.filter((e) => readable(e) && !isChrome(e) && e.textContent.trim().length > 80)
-		.slice(0, 15)
+		.filter((e) => readable(e) && !isChrome(e) && isTextBlock(e) && runningText(e).length > 80)
+		.slice(0, MAX_PARAGRAPHS)
 		.map((e) => {
 			const s = cs(e);
 			const counts = measureLines(e);
 			const full = counts.length > 1 ? counts.slice(0, -1) : counts;
 			return {
+				selector: selectorOf(e),
+				box: boxOf(e),
 				fontSize: s.fontSize,
 				lineHeight: s.lineHeight,
 				width: Math.round(e.getBoundingClientRect().width),
 				lines: counts.length,
 				charsPerLine: median(full),
 				charsPerLineMax: Math.max(0, ...counts),
-				text: e.textContent.trim().slice(0, 50)
+				text: runningText(e).slice(0, 50)
 			};
 		});
 
