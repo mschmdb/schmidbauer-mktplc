@@ -36,3 +36,20 @@ test('empty and short input yields an empty list', () => {
 	assert.deepEqual(repeatedPhrases(''), []);
 	assert.deepEqual(repeatedPhrases('a b'), []);
 });
+
+test('builds phrases from adjacent tokens only, short words included', () => {
+	const text = 'solar of panels\nsolar of panels\nsolar of panels';
+	const grams = repeatedPhrases(text).map(([g]) => g);
+	assert.ok(!grams.includes('solar panels'), 'solar and panels are not adjacent');
+	assert.deepEqual(grams, ['solar of panels']);
+});
+
+test('drops phrases made only of short tokens', () => {
+	const text = 'of to in\nof to in\nof to in\nof to in';
+	assert.deepEqual(repeatedPhrases(text), []);
+});
+
+test('keeps a phrase with one long token next to short ones', () => {
+	const text = 'made in berlin\nmade in berlin\nmade in berlin';
+	assert.deepEqual(repeatedPhrases(text), [['made in berlin', 3]]);
+});
