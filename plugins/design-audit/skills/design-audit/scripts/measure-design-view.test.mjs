@@ -195,3 +195,22 @@ test('hierarchy: image links, translucent map controls, icon toggles and pressed
 	const h = deriveHierarchy((await measureDesignFixture('buttons-patterns.html')).hierarchy);
 	assert.deepEqual(h.primaryButtons.items.map((b) => b.label), ['Book a call']);
 });
+
+test('late content: an image and a background image that load after 1500 ms are reported as media', opts, async () => {
+	const { finishDesign } = await import('./lib/design.mjs');
+	const { withFixture } = await import('./browser-helpers.mjs');
+	const { runDesignScripts } = await import('./design-scripts.mjs');
+	const { readFileSync } = await import('node:fs');
+	const snapshotSource = readFileSync(new URL('./snapshot-first-viewport.js', import.meta.url), 'utf8');
+	await withFixture('late-media.html', async (page) => {
+		await page.waitForTimeout(1000);
+		const earlySnapshot = await page.evaluate(snapshotSource);
+		await page.waitForTimeout(900);
+		const { design } = finishDesign(await runDesignScripts(page), { earlySnapshot });
+		const late = design.firstViewport.lateContent;
+		assert.equal(late.count, 0, 'no late text');
+		assert.deepEqual(late.media.items.map((m) => m.selector), ['#late-img', '#late-bg']);
+		assert.deepEqual(late.media.items.map((m) => m.kind), ['img', 'background-image']);
+		assert.ok(late.media.items.every((m) => m.box.w === 100));
+	}, viewport);
+});

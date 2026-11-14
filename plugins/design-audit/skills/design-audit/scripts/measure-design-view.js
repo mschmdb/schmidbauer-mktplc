@@ -137,6 +137,28 @@
 	const MAX_VISIBLE_TEXT = 300;
 	const visibleText = firstText.slice(0, MAX_VISIBLE_TEXT).map((e) => ({ selector: selectorOf(e), label: label(e), box: boxOf(e) }));
 
+	// Painted media in the first viewport, for the late-content diff: a loaded image, a video with a frame, a canvas, a large inline
+	// svg, a background image. The same test sits in snapshot-first-viewport.js.
+	const MAX_VISIBLE_MEDIA = 100;
+	const MIN_MEDIA_SIDE = 16; // smaller images are icons
+	const MIN_SVG_SIDE = 48; // an inline svg of this size counts as an illustration
+	const sideOf = (el) => {
+		const r = el.getBoundingClientRect();
+		return Math.min(r.width, r.height);
+	};
+	const isPaintedMedia = (el) => {
+		if (el instanceof HTMLImageElement) return el.complete && el.naturalWidth > 0 && sideOf(el) >= MIN_MEDIA_SIDE;
+		if (el instanceof HTMLVideoElement) return el.readyState >= 2 && sideOf(el) >= MIN_MEDIA_SIDE;
+		if (el instanceof HTMLCanvasElement) return sideOf(el) >= MIN_MEDIA_SIDE;
+		if (el instanceof SVGSVGElement) return sideOf(el) >= MIN_SVG_SIDE;
+		return /url\(/.test(cs(el).backgroundImage) && sideOf(el) >= MIN_MEDIA_SIDE;
+	};
+	const mediaKind = (el) => (el.matches('img, video, canvas') ? el.tagName.toLowerCase() : el instanceof SVGSVGElement ? 'svg' : 'background-image');
+	const visibleMedia = firstVis
+		.filter(isPaintedMedia)
+		.slice(0, MAX_VISIBLE_MEDIA)
+		.map((e) => ({ selector: selectorOf(e), label: e.getAttribute('alt') || e.getAttribute('aria-label') || '', kind: mediaKind(e), box: boxOf(e) }));
+
 	// ---- button test (H1, G2) ----
 	// The same block sits in measure-design-gestalt.js and measure-design-view.js; each file must stay self-contained.
 	// A filled button has a text label, a solid fill that differs from what is behind it, and a minimum size. Image links,
@@ -398,7 +420,7 @@
 		limits: { total: allElements.length, scanned: scanned.length, capped: allElements.length > MAX_ELEMENTS },
 		hierarchy: { primaryButtons },
 		overflow,
-		firstViewport: { width: VW, height: VH, h1, weights, media, overlays, textOverImage, visibleText },
+		firstViewport: { width: VW, height: VH, h1, weights, media, overlays, textOverImage, visibleText, visibleMedia },
 		prominence: { candidates: prominenceCandidates },
 		tells: { gradientText, backdropBlur, emojiIcons, identicalCardGroups, gradientBackgrounds, generator, builders }
 	};

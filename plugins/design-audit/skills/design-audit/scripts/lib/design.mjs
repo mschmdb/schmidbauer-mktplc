@@ -18,7 +18,7 @@ import { deriveTypography } from './typography.mjs';
 export function finishDesign(raw, { earlySnapshot = null } = {}) {
 	const typography = deriveTypography(raw.typography);
 	const similarity = deriveSimilarity(raw.similarity);
-	const firstViewport = { ...deriveFirstViewport(raw.firstViewport), lateContent: deriveLateContent(raw.firstViewport.visibleText ?? [], earlySnapshot) };
+	const firstViewport = { ...deriveFirstViewport(raw.firstViewport), lateContent: deriveLateContent(raw.firstViewport.visibleText ?? [], earlySnapshot, raw.firstViewport.visibleMedia ?? []) };
 	return {
 		design: {
 			limits: raw.limits,

@@ -1,0 +1,18 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><title>Late media</title>
+<style>
+body { margin: 0; padding: 24px; font: 16px/1.4 Arial, sans-serif; }
+img, #late-bg { display: block; width: 100px; height: 100px; margin-bottom: 12px; background-color: #ddd; }
+</style></head>
+<body>
+<h1>Text is there from the start</h1>
+<img id="early" alt="Shown at once" width="100" height="100" src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7">
+<img id="late-img" alt="Arrives late" width="100" height="100">
+<div id="late-bg"></div>
+<script>
+setTimeout(() => {
+	document.getElementById('late-img').src = 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7';
+	document.getElementById('late-bg').style.backgroundImage = 'url("data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7")';
+}, 1500);
+</script>
+</body></html>

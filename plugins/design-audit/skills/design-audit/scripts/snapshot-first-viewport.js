@@ -1,10 +1,13 @@
 // Light snapshot, evaluated inside the page about 1000 ms after navigation (see audit.mjs).
-// Returns the selectors of text elements that are visible in the first viewport right now.
+// Returns the selectors of text elements and loaded media that are visible in the first viewport right now.
 // lib/late-content.mjs diffs it against the final measurement of measure-design-view.js.
 // Self-contained, no imports. The visibility test and selectorOf match measure-design-view.js.
 (() => {
 	const MAX_ELEMENTS = 3000;
 	const MAX_VISIBLE = 300;
+	const MAX_VISIBLE_MEDIA = 100;
+	const MIN_MEDIA_SIDE = 16; // smaller images are icons
+	const MIN_SVG_SIDE = 48; // an inline svg of this size counts as an illustration
 	const NOT_RENDERED = new Set(['SCRIPT', 'STYLE', 'NOSCRIPT', 'TEMPLATE']);
 	const docWidth = document.documentElement.scrollWidth;
 	const docHeight = document.documentElement.scrollHeight;
@@ -47,8 +50,23 @@
 	const all = [...document.body.querySelectorAll('*')];
 	const scanned = all.slice(0, MAX_ELEMENTS).filter((e) => !NOT_RENDERED.has(e.tagName) && !e.ownerSVGElement);
 	const shown = scanned.filter((e) => !e.closest('[aria-hidden="true"]') && hasOwnText(e) && visible(e) && inFirst(e));
+	// Media that is painted: a loaded image, a video with a frame, a canvas, a large inline svg, a background image.
+	// The same test sits in measure-design-view.js.
+	const side = (el) => {
+		const r = el.getBoundingClientRect();
+		return Math.min(r.width, r.height);
+	};
+	const isMedia = (el) => {
+		if (el instanceof HTMLImageElement) return el.complete && el.naturalWidth > 0 && side(el) >= MIN_MEDIA_SIDE;
+		if (el instanceof HTMLVideoElement) return el.readyState >= 2 && side(el) >= MIN_MEDIA_SIDE;
+		if (el instanceof HTMLCanvasElement) return side(el) >= MIN_MEDIA_SIDE;
+		if (el instanceof SVGSVGElement) return side(el) >= MIN_SVG_SIDE;
+		return /url\(/.test(getComputedStyle(el).backgroundImage) && side(el) >= MIN_MEDIA_SIDE;
+	};
+	const media = all.slice(0, MAX_ELEMENTS).filter((e) => !NOT_RENDERED.has(e.tagName) && !e.ownerSVGElement && visible(e) && inFirst(e) && isMedia(e));
 	return {
 		visible: shown.slice(0, MAX_VISIBLE).map(selectorOf),
-		capped: shown.length > MAX_VISIBLE || all.length > MAX_ELEMENTS
+		visibleMedia: media.slice(0, MAX_VISIBLE_MEDIA).map(selectorOf),
+		capped: shown.length > MAX_VISIBLE || media.length > MAX_VISIBLE_MEDIA || all.length > MAX_ELEMENTS
 	};
 })();
