@@ -64,6 +64,9 @@ Check these while you build. The rule IDs refer to `references/principles.md`, w
 ## 6. Finish gate
 
 1. Look at the result in a browser at desktop (1440 px) and mobile (390 px) widths. Check hover, focus and the empty and error states.
+   - Check every state the page has: hover, focus-visible, active, disabled, loading, empty, error. Skip states that do not apply.
+   - With a browser automation tool: hover with the pointer, reach focus with Tab, press and hold for active, force the error (offline request, invalid input). Turn reduced motion on, so a screenshot does not catch a transition.
+   - Without one: add a temporary state switch (query parameter or constant) to the dev build. Remove it before you commit.
 2. Run the audit measurements against the local dev server:
 
    ```bash
