@@ -30,8 +30,8 @@ Boxes are `{x, y, w, h}` in CSS pixels, in document coordinates. Screenshots use
 | `design` | Design measurements (see below). `null` if the step failed (see `notes`, `missing`). | |
 | `pixels` | Pixel measures of the first viewport (see below). | |
 | `focus` | First 10 Tab stops (own value): `element`, `label`, `visible`, `via` (outline, box-shadow, border, background, color, underline, none). `visible: false` means no indicator differs from the unfocused style. | A1 |
-| `axe` | Desktop only, `null` on mobile. axe-core violations for WCAG 2.0 A and AA, 2.1 AA, 2.2 AA: `id`, `impact`, `nodes`, `help`, 3 `examples`. | A1 |
-| `axeIncomplete` | Desktop only. Checks axe could not decide, often contrast over images or gradients. Verify by hand. | A1, G7 |
+| `axe` | Desktop only, `null` on mobile. axe-core violations for WCAG 2.0 A and AA, 2.1 AA, 2.2 AA: `id`, `impact`, `nodes`, `help`, up to 3 `examples` as `{selector, box}`. `box` is `null` for nodes inside iframes or shadow roots. | A1 |
+| `axeIncomplete` | Desktop only. Checks axe could not decide, often contrast over images or gradients. Same fields as `axe` without `impact`, with `examples` as `{selector, box}` to crop and verify by hand. | A1, G7 |
 
 ## `measure`
 
@@ -42,7 +42,7 @@ Boxes are `{x, y, w, h}` in CSS pixels, in document coordinates. Screenshots use
 | `fonts`, `sizes`, `colors` | Counts of computed values on text elements. | T1, T2, C1 |
 | `fontsOutsideCode` | Not in `audit.json`. Used for `tells.monoTextElements`. | |
 | `paragraphs` | Up to 15 text blocks over 80 characters of running text in the main content (own value): `selector`, `box`, `fontSize`, `lineHeight`, `width`, `lines`, `charsPerLine` (median over full lines), `charsPerLineMax`, `text`. A text block is a `p`, or an `li` with display `list-item` or `block` and no block child other than figures. Headings, grid and flex rows, list items that hold a heading or paragraph (the paragraph is measured instead), alt text and text inside `svg` or `canvas` are not measured. Measured per glyph, not estimated. A one-line block (`lines: 1`) says nothing about line length. | T3, T4, T5 |
-| `smallTargets` | Targets under 24 x 24 CSS px (own screening value, the WCAG 2.5.8 minimum): `total`, `failingSpacing`, `items` (25 shown). Excluded: inline links in running text, hidden native inputs. `(spacing ok)` means no other target within a 24 px circle. | P8 |
+| `smallTargets` | Targets under 24 x 24 CSS px (own screening value, the WCAG 2.5.8 minimum): `total`, `failingSpacing`, `items` (25 shown, each `{selector, box, tag, label, spacingOk}`). Excluded: inline links in running text, hidden native inputs. `spacingOk` means no other target within a 24 px circle. | P8 |
 | `headings` | One string per h1 to h4: tag, size, weight, text. ` ACCENT ` marks parts styled differently from the heading. | T2, K2 |
 | `tells` | Counts of generic-look signals. Not verdicts (K2). Keys below. | K2 |
 | `repeated` | `[phrase, count]` pairs of two or three words that occur 3 or more times, at most 20 (own values). Phrases come from adjacent tokens only and never span a block. A phrase of only one- or two-letter tokens is dropped. Navigation, footer and hidden text excluded. A bigram inside a surviving trigram is dropped. | W3 |

@@ -184,10 +184,13 @@
 	const smallTargets = {
 		total: small.length,
 		failingSpacing: small.filter((t) => !t.spacingOk).length,
-		items: small.slice(0, 25).map(({ el, r, spacingOk }) => {
-			const label = (el.getAttribute('aria-label') || el.textContent || '').trim().slice(0, 30);
-			return `${Math.round(r.width)}x${Math.round(r.height)} ${el.tagName} ${label}${spacingOk ? ' (spacing ok)' : ''}`;
-		})
+		items: small.slice(0, 25).map(({ el, spacingOk }) => ({
+			selector: selectorOf(el),
+			box: boxOf(el),
+			tag: el.tagName,
+			label: (el.getAttribute('aria-label') || el.textContent || '').trim().slice(0, 30),
+			spacingOk
+		}))
 	};
 
 	const headings = [...document.querySelectorAll('h1, h2, h3, h4')].map((e) => {

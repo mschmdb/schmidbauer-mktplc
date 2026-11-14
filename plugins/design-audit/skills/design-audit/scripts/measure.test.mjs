@@ -1,6 +1,6 @@
 import { test, after } from 'node:test';
 import assert from 'node:assert/strict';
-import { closeBrowser, measureFixture, skipReason } from './browser-helpers.mjs';
+import { closeBrowser, measureFixture, skipReason, withFixture } from './browser-helpers.mjs';
 import { finishMeasure } from './lib/post.mjs';
 
 after(closeBrowser);
@@ -23,9 +23,16 @@ test('smallTargets skips inline text links and hidden inputs, tests spacing, rep
 	// The wide nav links pass the 24 px circle test; only the two 16 px buttons 2 px apart fail.
 	assert.equal(m.smallTargets.failingSpacing, 2);
 	assert.equal(m.smallTargets.items.length, 5);
-	assert.ok(m.smallTargets.items.some((i) => /Home/.test(i)));
-	assert.ok(!m.smallTargets.items.some((i) => /terms|Newsletter/.test(i)));
-	assert.ok(m.smallTargets.items.some((i) => /isolated/.test(i) && /spacing ok/.test(i)));
+	assert.ok(m.smallTargets.items.some((i) => /Home/.test(i.label)));
+	assert.ok(!m.smallTargets.items.some((i) => /terms|Newsletter/.test(i.label)));
+	assert.ok(m.smallTargets.items.some((i) => /isolated/.test(i.label) && i.spacingOk));
+	for (const item of m.smallTargets.items) {
+		assert.ok(item.selector && item.tag && item.box.w > 0 && item.box.h > 0, JSON.stringify(item));
+	}
+	const counts = await withFixture('targets.html', (page) => Promise.all(m.smallTargets.items.map((i) => page.locator(i.selector).count())));
+	assert.deepEqual(counts, m.smallTargets.items.map(() => 1), 'every selector resolves to one element');
+	const left = m.smallTargets.items.find((i) => i.label === 'left');
+	assert.deepEqual([left.box.w, left.box.h, left.spacingOk], [16, 16, false]);
 });
 
 test('paragraphs measure real characters per line inside main content only (item 6)', opts, async () => {

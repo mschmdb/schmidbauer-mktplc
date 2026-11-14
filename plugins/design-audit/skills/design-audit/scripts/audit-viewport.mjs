@@ -12,6 +12,7 @@ import { finishDesign } from './lib/design.mjs';
 import { withRetry } from './lib/retry.mjs';
 import { runDesignScripts } from './design-scripts.mjs';
 import { pixelReport } from './pixels.mjs';
+import { boxesForNodes } from './page-boxes.mjs';
 import { scrollWholePage, waitForSettled } from './page-prep.mjs';
 import { evaluateAtViewport } from './lib/viewport.mjs';
 import { LATE_REFERENCE_MS } from './lib/late-content.mjs';
@@ -138,14 +139,19 @@ export async function auditViewport(browser, name, contextOptions, notes, { url,
 		if (name === 'desktop') {
 			const axe = await step('axe', 'axe-core run', () => new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa', 'wcag21aa', 'wcag22aa']).analyze());
 			if (axe) {
-				result.axe = axe.violations.map((v) => ({
-					id: v.id,
-					impact: v.impact,
-					nodes: v.nodes.length,
-					help: v.help,
-					examples: v.nodes.slice(0, 3).map((n) => n.target.join(' '))
-				}));
-				result.axeIncomplete = axe.incomplete.map((v) => ({ id: v.id, nodes: v.nodes.length, help: v.help }));
+				const MAX_EXAMPLES = 3;
+				const summarise = async (list) =>
+					Promise.all(
+						list.map(async (v) => ({
+							id: v.id,
+							...(v.impact ? { impact: v.impact } : {}),
+							nodes: v.nodes.length,
+							help: v.help,
+							examples: await boxesForNodes(page, v.nodes.slice(0, MAX_EXAMPLES)).catch(() => v.nodes.slice(0, MAX_EXAMPLES).map((n) => ({ selector: n.target.join(' '), box: null })))
+						}))
+					);
+				result.axe = await summarise(axe.violations);
+				result.axeIncomplete = await summarise(axe.incomplete);
 			}
 		}
 		result.measure = await step('measure', 'page measurement', () => measure(page));

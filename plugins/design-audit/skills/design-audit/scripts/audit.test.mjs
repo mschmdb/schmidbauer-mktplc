@@ -66,6 +66,9 @@ test('audit.mjs writes audit.json with desktop and mobile results and the PNG fi
 			}
 		}
 		assert.ok(Array.isArray(audit.desktop.axe));
+		const imageAlt = audit.desktop.axe.find((v) => v.id === 'image-alt');
+		assert.equal(imageAlt.examples[0].selector, '#no-alt');
+		assert.deepEqual([imageAlt.examples[0].box.w, imageAlt.examples[0].box.h], [20, 20]);
 		assert.equal(audit.mobile.axe, null);
 		assert.match(audit.mobile.userAgent, /iPhone/);
 		assert.ok(audit.desktop.viewport.width > audit.mobile.viewport.width);
