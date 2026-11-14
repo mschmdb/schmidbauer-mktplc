@@ -114,13 +114,13 @@ On screens the direct evidence is thin. One study found that spatial grouping an
 ### T3 Line length
 **Principle.** Lines of moderate length read comfortably.
 **Violation.** Body lines far wider or narrower than the conventions.
-**Check.** Measure characters per line in body text and report the value against all three conventions. Butterick: 45 to 90. Material 3: 40 to 60. Baymard: 50 to 75, ceiling 80. Flag only values outside all three. `measure.paragraphs[].charsPerLine` holds the measured median of full lines. No verified figure exists for mobile.
+**Check.** Measure characters per line in body text and report the value against all three conventions. Butterick: 45 to 90. Material 3: 40 to 60. Baymard: 50 to 75, ceiling 80. Flag only values outside all three. `measure.paragraphs[].charsPerLine` holds the measured median of full lines. Scope: running text only. Skip one-line blocks (`lines: 1`) and card snippets under about 3 lines; they are not body text. No verified figure exists for mobile.
 **Evidence.** convention. Source: [Butterick](https://practicaltypography.com/line-length.html), [Material 3](https://m3.material.io/foundations/layout/breakpoints/overview), [Baymard](https://baymard.com/blog/line-length-readability)
 
 ### T4 Line height
 **Principle.** Body text needs leading in proportion to its size.
 **Violation.** Body text set tight or loose far outside the range.
-**Check.** Line height of body paragraphs against 120 to 145 %. Headings and display type: no verified number, observation only.
+**Check.** Line height of body paragraphs against 120 to 145 %. Headings and display type: no verified number, observation only. WCAG 1.4.8 (AAA) asks for at least 150 %. Cite it as the stricter reference only. Body text at 150 % is no finding, and accessibility is out of scope here.
 **Evidence.** convention. Source: [Butterick, line spacing](https://practicaltypography.com/line-spacing.html)
 
 ### T5 Body size
@@ -132,7 +132,7 @@ On screens the direct evidence is thin. One study found that spatial grouping an
 ### T6 Tracking of capitals
 **Principle.** Capitals need extra letter-spacing.
 **Violation.** All-caps text without tracking.
-**Check.** Letter-spacing on uppercase text against 5 to 12 % of the font size.
+**Check.** Letter-spacing on uppercase text against 5 to 12 % of the font size. The violation is missing tracking. No source sets an upper limit beyond the cited range, so values above 12 % are an observation.
 **Evidence.** convention. Source: [Butterick, letterspacing](https://practicaltypography.com/letterspacing.html)
 
 ### T7 Justified and centred text
@@ -260,7 +260,7 @@ On screens the direct evidence is thin. One study found that spatial grouping an
 ### P2 First viewport
 **Principle.** The value proposition and primary action sit in the first viewport.
 **Violation.** The first viewport holds only a logo, an image or a banner. A clean section edge at the fold suggests the page ends there (false floor).
-**Check.** h1 present, its size and word count, share covered by image or video, overlay or banner area, content that appears after 1000 ms (`design.firstViewport`). Desktop: 57 % of viewing time above the fold, 74 % in the first two screenfuls. No verified fold figure exists for mobile, so ask the same question on the mobile viewport.
+**Check.** h1 present, its size and word count, share covered by image, video, canvas or large inline svg (a decorative canvas behind the text counts; read it with `textOverImage`), overlay or banner area, content that appears after 1000 ms (`design.firstViewport`). Desktop: 57 % of viewing time above the fold, 74 % in the first two screenfuls. No verified fold figure exists for mobile, so ask the same question on the mobile viewport.
 **Evidence.** research. Source: [NN/g scrolling and attention](https://www.nngroup.com/articles/scrolling-and-attention/)
 
 ### P3 Placement

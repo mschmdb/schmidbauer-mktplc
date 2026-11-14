@@ -39,7 +39,7 @@ Boxes are `{x, y, w, h}` in CSS pixels, in document coordinates. Screenshots use
 |---|---|---|
 | `title`, `lang`, `bodyBg`, `pageHeight`, `hasMain`, `firstLinkText` | Document facts. | |
 | `firstViewport` | `viewport` (the configured size as `WxH`, equal to `viewport` above), `headings`, `text`, `actions` (up to 15), `hasAction`. Text, not geometry. | P1, P2 |
-| `fonts`, `sizes`, `colors` | Counts of computed values on text elements. | T1, T2, C1 |
+| `fonts`, `sizes`, `colors` | Counts of computed values on text elements (`colors` counts text colours only, not backgrounds). | T1, T2, C1 |
 | `fontsOutsideCode` | Not in `audit.json`. Used for `tells.monoTextElements`. | |
 | `paragraphs` | Up to 15 text blocks over 80 characters of running text in the main content (own value): `selector`, `box`, `fontSize`, `lineHeight`, `width`, `lines`, `charsPerLine` (median over full lines), `charsPerLineMax`, `text`. A text block is a `p`, or an `li` with display `list-item` or `block` and no block child other than figures. Headings, grid and flex rows, list items that hold a heading or paragraph (the paragraph is measured instead), alt text and text inside `svg` or `canvas` are not measured. Measured per glyph, not estimated. A one-line block (`lines: 1`) says nothing about line length. | T3, T4, T5 |
 | `smallTargets` | Targets under 24 x 24 CSS px (own screening value, the WCAG 2.5.8 minimum): `total`, `failingSpacing`, `items` (25 shown, each `{selector, box, tag, label, spacingOk}`). Excluded: inline links in running text, hidden native inputs. `spacingOk` means no other target within a 24 px circle. | P8 |
@@ -47,7 +47,7 @@ Boxes are `{x, y, w, h}` in CSS pixels, in document coordinates. Screenshots use
 | `headings` | One string per h1 to h4: tag, size, weight, text. ` ACCENT ` marks parts styled differently from the heading. | T2, K2 |
 | `tells` | Counts of generic-look signals. Not verdicts (K2). Keys below. | K2 |
 | `repeated` | `[phrase, count]` pairs of two or three words that occur 3 or more times, at most 20 (own values). Phrases come from adjacent tokens only and never span a block. An apostrophe inside a word stays ("berlin's"). A phrase of only one- or two-letter tokens is dropped. Navigation, footer and hidden text excluded. A bigram inside a surviving trigram is dropped. | W3 |
-| `reducedMotionRule`, `colorSchemeRule` | A readable stylesheet mentions `prefers-reduced-motion` or `prefers-color-scheme`. Cross-origin sheets are unreadable and count as absent. | M2 |
+| `reducedMotionRule`, `colorSchemeRule` | A readable stylesheet mentions `prefers-reduced-motion` or `prefers-color-scheme`. Cross-origin sheets are unreadable and count as absent. `colorSchemeRule: false` does not mean "no dark mode": a class-based theme toggle leaves it false. | M2 |
 | `runningAnimations`, `canvases`, `videos` | Web Animations running after load; canvas and video elements. | M1 |
 
 `measure.tells` from `measure.js`: `uppercaseTrackedLabels` (+ `uppercaseLabelExamples`), `middleDotStrings`, `arrowSuffixes` (link and button labels only), `headingAccents`, `numberedMarkers` (text is exactly 01 to 09), `emDashes`, `cardLikeBoxes` (radius 6 px or more, a visible edge, height over 120 px; own values), `monoTextElements` (added by the script).
@@ -56,7 +56,7 @@ Added from the design scripts: `gradientText`, `backdropBlurElements`, `emojiIco
 
 ## `design`
 
-Every list entry carries `selector` and `box`. A group entry (`proximity.groups`, `identicalCardGroups`) carries the selector of its top-left member, its container in `parent`, and `box` of the whole group. `limits` per script: `total`, `scanned`, `capped`. Each script inspects the first 3,000 elements of `<body>` (own value). If `capped` is true, say so in the report.
+Every list entry carries `selector` and `box`. A group entry (`proximity.groups`, `identicalCardGroups`) carries the selector of its top-left member, its container in `parent`, and `box` of the whole group. `limits` per script: `total`, `scanned`, `capped`. Each script inspects the first 3,000 elements of `<body>` (own value). `scanned` is lower than `total` without a cap because `svg` children and non-rendered tags are skipped. If `capped` is true, say so in the report.
 
 | Object and fields | Meaning | Rules |
 |---|---|---|
@@ -80,7 +80,7 @@ Every list entry carries `selector` and `box`. A group entry (`proximity.groups`
 | `hierarchy.primaryButtons` | `count` and `items`: links and buttons in the first viewport with a text label, at least 48 x 24 px, and a solid fill (alpha 0.9 or more, RGB distance 30 or more from what is behind it; own values), up to 20. Image links, translucent controls, icon-only buttons and toggles (`aria-pressed`, `role=switch`) do not count. A page with `count: 0` has no filled primary button. | H1 |
 | `firstViewport` | `width`, `height` (the configured size), `h1` (`present` in the first viewport, `anywhere`), `weights`, `media`, `overlays`, `textOverImage`, `lateContent`. | P1, P2, H3 |
 | `firstViewport.lateContent` | `{ referenceMs, count, items[{selector, label, box}], media }`, or `null` without a usable snapshot. Lists text visible in the final measurement that was not visible in the first viewport at `referenceMs` (1000 ms). `media` is `{count, items[{selector, label, kind, box}]}` for images (loaded), video (with a frame), canvas, inline svg of 48 px or more and background images that appeared after the reference, or `null` without a media list. Up to 10 items each. A selector that changes between 1000 ms and the end gives a false positive. | M3, P2 |
-| `firstViewport.weights` | Text area x font size, a proxy for visual weight. `top` lists 10. `nearLargest` lists elements at 80 % or more of the largest (own value); `competing` is true for two or more. | H3 |
+| `firstViewport.weights` | Text area x font size, a proxy for visual weight. `top` lists 10. `nearLargest` lists elements at 80 % or more of the largest (own value); `weights.nearLargest.competing` is true for two or more. | H3 |
 | `firstViewport.media` | `coveredShare`: image, video, canvas, background-image and large inline svg (48 x 48 px or more) area on an 8 px grid; `items[{kind, selector, box}]`. A decorative canvas behind plain text still counts, so read the share together with `textOverImage`. | P2 |
 | `firstViewport.overlays` | Fixed or sticky elements over 10 % of the viewport (own value). | P2, P8 |
 | `firstViewport.textOverImage` | Text on a background image or overlapping media (`via`). | G7 |

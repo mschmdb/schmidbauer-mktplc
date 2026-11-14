@@ -16,7 +16,7 @@ Use this file after the measurements and the glance test. It replaces the old re
 ## 3. Fields per finding
 - Rule ID and short name, for example "H1 One primary action per view"
 - Viewport: desktop, mobile or both
-- Severity (section 6)
+- Severity (section 6). When it differs by viewport, give one per viewport.
 - Evidence level (section 4)
 - Locator: CSS selector, or a precise description when no selector exists
 - Crop: path of a cropped screenshot that shows the element
@@ -50,7 +50,7 @@ Use the NN/g scale 0 to 4. Judge by frequency, impact and persistence. Source: h
 After drafting, spawn a fresh subagent with no access to your reasoning. Give it each finding's claim, locator, crop and measured value. It tries to refute each one.
 
 - Drop findings it refutes.
-- Downgrade findings it cannot confirm to observations.
+- Downgrade a claim it cannot confirm to an observation. When it confirms the core claim and doubts only a side clause, keep the finding and drop the clause.
 
 If no subagent tool exists, re-check each finding against its crop and measurement yourself. Say in the report that the pass was not independent.
 
@@ -86,7 +86,7 @@ Scope: <URL>, <date>, viewports <desktop 1440 x 900, mobile device>. Not checked
 <Findings with the fields from section 3. Mark each desktop, mobile or both.>
 
 ## Observations
-<Rule of thumb items and unconfirmed findings, with the measured value.>
+<Rule of thumb items, unconfirmed findings and dropped findings with the reason, each with the measured value.>
 
 ## What works
 <Short.>

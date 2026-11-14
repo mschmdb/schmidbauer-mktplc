@@ -19,8 +19,8 @@ The rule file defines the evidence classes: research, convention, rule of thumb.
 ## 2. Identify sources
 
 - **Repository.** Read the code when a checkout or hosted repo exists. Read only: the audit must not change the project. For hosted code use the host's API, e.g. `gh api repos/<owner>/<repo>/contents/<path>?ref=<branch>`. Read the deployed branch. Fetch local checkouts against their remote and report if they are behind.
-- **Direction.** Look for a project `DESIGN.md` or a stated direction. Rule K2 ("default or decision?") needs it. A given corporate design overrides K (K3).
-- **Earlier audit.** Look where reports are kept (step 8). Compare and name what changed.
+- **Direction.** Look for a project `DESIGN.md` or a stated direction. Rule K2 ("default or decision?") needs it. A given corporate design overrides K (K3). When the file is missing, or the code cites one that is absent, take the direction from design comments in the code, content notes and the site's own consistent choices. Say so in the report and list the missing file as an owner question.
+- **Earlier audit.** Look in the audited project and in the folder you save to (step 8). Compare and name what changed.
 - **Owner questions.** The O block lists what a URL cannot answer (users, tests, context of use). Collect them for the report.
 
 ## 3. Measure in the browser
@@ -34,6 +34,8 @@ node ${CLAUDE_SKILL_DIR}/scripts/audit.mjs <url> <temp-dir>/design-audit/<slug>
 ```
 
 Use the system temp directory and a short slug. The script prints a short summary: paths, `notes`, `incomplete` and the status per viewport. The full result is `<dir>/audit.json`. Read parts of it, not the whole file.
+
+Subpages: run the script again for each subpage you judge. The glance test runs on the home page and on landing pages people enter directly, not on every subpage. App-like pages (maps, tools) get measurements and a note that P1 does not apply as written.
 
 The script measures desktop (1440 x 900) and mobile (a Playwright device descriptor) in full. Per viewport it writes load frames, a first-viewport screenshot with greyscale and blurred copies, a full-page screenshot, a scroll series, and the measurements `measure`, `design`, `pixels` and `focus`. axe-core runs on desktop only. Read `${CLAUDE_SKILL_DIR}/references/audit-output.md` when you interpret fields or file names.
 
@@ -76,7 +78,8 @@ A real browser tool (for example Claude in Chrome) helps for hover states and in
 
 - Full-page screenshots hide sticky and scroll-driven animation. An apparently empty area is often a scroll track. Check the scroll series and the code before judging.
 - WebGL needs SwiftShader headless. The script sets it. Check whether the page renders a canvas.
-- Tells in `measure.tells` are counts, not verdicts. Ask "default or decision?" (K2).
+- Tells in `measure.tells` are counts, not verdicts. Ask "default or decision?" (K2). Treat `design.proximity.violations` as leads: crop the heading or group first and check for a kicker, a rule or a conflicting cue (G10).
+- App-style pages (canvas, maps, constant network activity, a fixed shell with an inner scroll container) rarely settle. `notes` then says what kept the page busy. The full-page capture can show a blank lower half and `overflow` can be false. Judge from the viewport and scroll shots and state the limit.
 - Count repetition across pages: `repeated` per page, plus sentences that appear verbatim on several pages.
 - Read content files. They often hold builder notes that show label drift between content and page.
 - A rule of thumb never becomes a finding. Report it as an observation with the measured value.

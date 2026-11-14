@@ -11,7 +11,7 @@ You know the URL, the code and the whole page. Your own reading of the first vie
 ## 2. Inputs
 
 - Use the load frame taken 2500 ms after navigation, per viewport: `desktop-t2500.png` and `mobile-t2500.png`. It shows what a visitor has seen by then. Do not use `<viewport>-viewport.png`, which is taken after the page has settled.
-- Copy each to a neutral name in the temp directory, for example `a.png` for desktop and `b.png` for mobile. A file name must leak nothing.
+- Copy each to a neutral name in the temp directory, for example `a.png` for desktop and `b.png` for mobile. A file name and the folder path must leak nothing. The image itself can leak a wordmark such as a domain; note it (section 8).
 
 ## 3. Observers
 
@@ -26,6 +26,7 @@ You know the URL, the code and the whole page. Your own reading of the first vie
 Read the image at <path>. Look at it once, as a first-time visitor would, for about five seconds.
 Answer from your overall impression. Do not transcribe small print.
 Do not guess. Answer "cannot tell" when you cannot tell.
+Answer in English.
 Use only what the image shows. Do not use any knowledge of a brand beyond the image.
 Answer these questions one at a time, in this order. Keep each answer to one or two sentences.
 1. What do you remember from this page?
@@ -38,10 +39,13 @@ Answer these questions one at a time, in this order. Keep each answer to one or 
 
 Replace `<path>` with the neutral file path.
 
+Run the test on the home page and on landing pages people enter directly. Skip other subpages. App-like pages (maps, tools) get measurements only, with a note that P1 does not apply as written.
+
 ## 5. Ground truth
 
 - Use the owner's stated purpose, audience and primary action when available. Ask through the O questions in `principles.md`.
 - Otherwise use the title, meta description and h1 as a proxy. State in the report that a proxy was used.
+- A proxy rarely names an audience or a primary action. When it does not, mark that item "not scored" in the table and say why. Do not invent the truth. Score the offer on the proxy.
 
 ## 6. Scoring
 
@@ -59,6 +63,11 @@ Aggregate per viewport and item:
 - Median score.
 - Share of observers who score 2 or higher.
 - Pass when at least 2 of 3 observers (3 of 5) score 2 or higher. A single outlier is noise.
+
+Scoring edge cases:
+
+- A hedged answer ("probably", "seems to be") is scored on its content. Note the hedge in the report. A bare "cannot tell" is 0.
+- The primary action sits below the first viewport on mobile: that is a P2 finding. Score the first action on what is visible. A click target that leads to the same goal (a header "Contact" for a booking button) is correct but generic (2). A target that leads elsewhere is 1.
 
 Questions 1 and 6 do not score. Read them for what stood out and what confused. Quote them in findings.
 
@@ -78,7 +87,7 @@ Cite the matching rule (P2, H1, H3) next to P1 in the finding.
 
 ## 8. Brand control
 
-When the logo is a widely known brand, observers may recognise it from the image. Note this in the report. The result then overstates clarity.
+When the logo is a widely known brand, or a wordmark that spells the domain, observers may take the name from the image. Note this in the report. The result then overstates clarity.
 
 ## 9. Limits
 
