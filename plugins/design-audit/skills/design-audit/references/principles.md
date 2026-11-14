@@ -182,7 +182,7 @@ On screens the direct evidence is thin. One study found that spatial grouping an
 ### S6 Breakpoints and reflow
 **Principle.** The layout adapts at defined widths.
 **Violation.** Layout breaks between breakpoints. Horizontal scroll appears on mobile.
-**Check.** Compare the desktop and mobile series. Material 3 breakpoints: compact under 600, medium 600 to 839, expanded 840 to 1199, large from 1200 dp.
+**Check.** Compare the desktop and mobile series. `design.overflow` lists elements that pass the viewport width. Material 3 breakpoints: compact under 600, medium 600 to 839, expanded 840 to 1199, large from 1200 dp.
 **Evidence.** convention. Source: [Material 3 breakpoints](https://m3.material.io/foundations/layout/breakpoints/overview)
 
 ### S7 Form labels

@@ -36,24 +36,24 @@ Boxes are `{x, y, w, h}` in CSS pixels, in document coordinates. Screenshots use
 | Field | Meaning | Rules |
 |---|---|---|
 | `title`, `lang`, `bodyBg`, `pageHeight`, `hasMain`, `firstLinkText` | Document facts. | |
-| `firstViewport` | `viewport` (inner size, can differ from `viewport` above when the page overflows sideways), `headings`, `text`, `actions` (up to 15), `hasAction`. Text, not geometry. | P1, P2 |
+| `firstViewport` | `viewport` (the configured size as `WxH`, equal to `viewport` above), `headings`, `text`, `actions` (up to 15), `hasAction`. Text, not geometry. | P1, P2 |
 | `fonts`, `sizes`, `colors` | Counts of computed values on text elements. | T1, T2, C1 |
 | `fontsOutsideCode` | Not in `audit.json`. Used for `tells.monoTextElements`. | |
 | `paragraphs` | Up to 15 paragraphs or list items over 80 characters in the main content (own value): `fontSize`, `lineHeight`, `width`, `lines`, `charsPerLine` (median over full lines), `charsPerLineMax`, `text`. Measured per glyph, not estimated. | T3, T4, T5 |
 | `smallTargets` | Targets under 24 x 24 CSS px (own screening value, the WCAG 2.5.8 minimum): `total`, `failingSpacing`, `items` (25 shown). Excluded: inline links in running text, hidden native inputs. `(spacing ok)` means no other target within a 24 px circle. | P8 |
 | `headings` | One string per h1 to h4: tag, size, weight, text. ` ACCENT ` marks parts styled differently from the heading. | T2, K2 |
 | `tells` | Counts of generic-look signals. Not verdicts (K2). Keys below. | K2 |
-| `repeated` | `[phrase, count]` pairs of two or three words that occur 3 or more times, at most 20 (own values). Navigation, footer and hidden text excluded. A bigram inside a surviving trigram is dropped. | W3 |
+| `repeated` | `[phrase, count]` pairs of two or three words that occur 3 or more times, at most 20 (own values). Phrases come from adjacent tokens only and never span a block. A phrase of only one- or two-letter tokens is dropped. Navigation, footer and hidden text excluded. A bigram inside a surviving trigram is dropped. | W3 |
 | `reducedMotionRule`, `colorSchemeRule` | A readable stylesheet mentions `prefers-reduced-motion` or `prefers-color-scheme`. Cross-origin sheets are unreadable and count as absent. | M2 |
 | `runningAnimations`, `canvases`, `videos` | Web Animations running after load; canvas and video elements. | M1 |
 
 `measure.tells` from `measure.js`: `uppercaseTrackedLabels` (+ `uppercaseLabelExamples`), `middleDotStrings`, `arrowSuffixes` (link and button labels only), `headingAccents`, `numberedMarkers` (text is exactly 01 to 09), `emDashes`, `cardLikeBoxes` (radius 6 px or more, a visible edge, height over 120 px; own values), `monoTextElements` (added by the script).
 
-Added from the design scripts: `gradientText`, `backdropBlurElements`, `emojiIcons`, `gradientBackgrounds` (each with `...Examples` of `{selector, box, text}`, up to 5), `gradientHues` (hue bins in degrees), `mostCommonRadius` and `mostCommonShadow` (`value`, `share`, `count`), `identicalCardGroups` (three or more siblings with the same skeleton, each at least 120 x 80), `generator` (meta tag), `builderFingerprints` (`attributes`, `hosts`, `matched`), `defaultFontsOnly` (only Inter, Roboto, Arial, Helvetica or a system-ui entry in body text). Each is a count or a name. None says "generic".
+Added from the design scripts: `gradientText`, `backdropBlurElements`, `emojiIcons`, `gradientBackgrounds` (each with `...Examples` of `{selector, box, text}`, up to 5), `gradientHues` (hue bins in degrees), `mostCommonRadius` and `mostCommonShadow` (`value`, `share`, `count`), `identicalCardGroups` (three or more siblings with the same skeleton, each at least 120 x 80; `selector` is the top-left member, `parent` the container), `generator` (meta tag), `builderFingerprints` (`attributes`, `hosts`, `matched`), `defaultFontsOnly` (only Inter, Roboto, Arial, Helvetica or a system-ui entry in body text). Each is a count or a name. None says "generic".
 
 ## `design`
 
-Every list entry carries `selector` and `box`. `limits` per script: `total`, `scanned`, `capped`. Each script inspects the first 3,000 elements of `<body>` (own value). If `capped` is true, say so in the report.
+Every list entry carries `selector` and `box`. A group entry (`proximity.groups`, `identicalCardGroups`) carries the selector of its top-left member, its container in `parent`, and `box` of the whole group. `limits` per script: `total`, `scanned`, `capped`. Each script inspects the first 3,000 elements of `<body>` (own value). If `capped` is true, say so in the report.
 
 | Object and fields | Meaning | Rules |
 |---|---|---|
@@ -68,19 +68,21 @@ Every list entry carries `selector` and `box`. `limits` per script: `total`, `sc
 | `alignment` | Left edges of text blocks, clustered within 2 px (own value). `distinct` is a count, an observation only. | G5 |
 | `proximity.headings` | `gapAbove`, `gapBelow`, `ratio`, `closerToPrevious`. | G1 |
 | `proximity.labels` | The same for form labels against their field. | G1, S7 |
-| `proximity.groups` | Three or more siblings: `inner`, `outer`, `ratio`, `innerNotSmaller`. | G1 |
+| `proximity.groups` | Three or more siblings: `parent`, `members`, `inner`, `outer`, `ratio`, `innerNotSmaller`. | G1 |
 | `proximity.violations` | Entries where the inner gap is equal to or larger than the outer gap. The 1.5 ratio is not a threshold here. | G1 |
 | `similarity.roles` | Per role (buttons, links, cards, h1 to h6): `total`, `distinct`, `dominantShare`, `differsIn`, `variants`. A variant is one combination of size, weight, colour, fill, border, radius, shadow and padding. | G2, S5 |
 | `similarity.radii`, `shadows` | Distinct values, counts, `top`. | G2, K2 |
 | `region` | Nesting depth of bordered or shadowed containers: `maxDepth`, `distribution`, `deep` (depth 3 or more, own value). | G3 |
 | `colour` | Chroma above 0.04 counts as chromatic. Hue bins are 30 degrees (own values). `text` and `backgrounds`: `neutralShare`, `families`. `accents`: colours on buttons and links. `lightness`: OKLCH spread per role (`text`, `background`, `buttonBackground`, `linkText`). | C1, C2, C3 |
-| `hierarchy.primaryButtons` | Visible, filled links and buttons in the first viewport, at least 24 px high, up to 20 (own values). | H1 |
-| `firstViewport` | `h1` (`present` in the first viewport, `anywhere`), `weights`, `media`, `overlays`, `textOverImage`. | P1, P2, H3 |
+| `hierarchy.primaryButtons` | `count` and `items`: visible, filled links and buttons in the first viewport, at least 24 px high, up to 20 (own values). | H1 |
+| `firstViewport` | `width`, `height` (the configured size), `h1` (`present` in the first viewport, `anywhere`), `weights`, `media`, `overlays`, `textOverImage`, `lateContent`. | P1, P2, H3 |
+| `firstViewport.lateContent` | `{ referenceMs, count, items[{selector, label, box}] }`, or `null` without a usable snapshot. Lists text visible in the final measurement that was not visible in the first viewport at `referenceMs` (1000 ms). Up to 10 items. A selector that changes between 1000 ms and the end gives a false positive. | M3, P2 |
 | `firstViewport.weights` | Text area x font size, a proxy for visual weight. `top` lists 10. `nearLargest` lists elements at 80 % or more of the largest (own value); `competing` is true for two or more. | H3 |
 | `firstViewport.media` | `coveredShare`: image, video, canvas and background-image area on an 8 px grid. | P2 |
 | `firstViewport.overlays` | Fixed or sticky elements over 10 % of the viewport (own value). | P2, P8 |
 | `firstViewport.textOverImage` | Text on a background image or overlapping media (`via`). | G7 |
-| `prominence` | Top 8 elements by area share x contrast x type size x weight x position prior. A prediction, not eye-tracking. `method` holds the formula. All factors are own values. | H2, P3 |
+| `prominence` | `method` and `items` (`rank`, `selector`, `label`, `kind`, `box`, `score`, `relative`): top 8 elements by area share x contrast x type size x weight x position prior. A filled button counts with its whole box (`kind: 'button'`), other text with its text area, media with its box. A prediction, not eye-tracking. All factors are own values. | H2, P3 |
+| `overflow` | `{ horizontal, documentWidth, viewportWidth, offenders[{selector, label, box}] }`. `viewportWidth` is the configured width, because mobile emulation widens `window.innerWidth` when the page overflows. `horizontal` is true when the document is wider. `offenders` lists up to 8 visible elements whose right edge passes it, widest first. Fixed elements and content inside `overflow-x: auto` or `scroll` containers are skipped. | S6 |
 
 ## `pixels`
 
@@ -118,4 +120,4 @@ Evaluated in another browser tool, `measure.js` returns the raw object. Differen
 - `contentText` and `fontsOutsideCode` are present. `repeated` and `tells.monoTextElements` are missing.
 - All design `tells` keys are missing.
 - `design`, `pixels`, `focus`, `axe`, `timing` and all screenshots are missing.
-- The viewport is whatever that tool uses.
+- The first-viewport size is `window.__auditViewport` (`{width, height}`) when the caller sets it. Otherwise it is `clientWidth` by `innerHeight`.
