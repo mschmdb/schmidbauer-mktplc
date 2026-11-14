@@ -5,6 +5,9 @@
  * @typedef {Object} SettleState
  * @property {boolean} fontsReady `document.fonts.ready` resolved before the timeout
  * @property {boolean} quiet no DOM change during the last `quietMs` before the timeout
+ * @property {string | null} lastMutation tag, id and first classes of the node that changed last, `null` when nothing changed
+ * @property {number} runningAnimations Web Animations running at the end
+ * @property {number} infiniteAnimations of those, the ones that repeat forever
  */
 
 /**
@@ -21,11 +24,19 @@ export function waitForSettled(page, { quietMs = 500, timeoutMs = 8000 } = {}) {
 				const started = performance.now();
 				let lastChange = started;
 				let fontsReady = false;
+				let lastMutation = null;
+				const describe = (node) => {
+					const el = node.nodeType === 1 ? node : node.parentElement;
+					if (!el) return null;
+					const classes = [...el.classList].slice(0, 2).map((c) => `.${c}`).join('');
+					return `${el.tagName.toLowerCase()}${el.id ? `#${el.id}` : ''}${classes}`;
+				};
 				document.fonts.ready.then(() => {
 					fontsReady = true;
 				});
-				const observer = new MutationObserver(() => {
+				const observer = new MutationObserver((records) => {
 					lastChange = performance.now();
+					lastMutation = describe(records[records.length - 1].target);
 				});
 				observer.observe(document, { subtree: true, childList: true, attributes: true, characterData: true });
 				const timer = setInterval(() => {
@@ -34,7 +45,14 @@ export function waitForSettled(page, { quietMs = 500, timeoutMs = 8000 } = {}) {
 					if ((fontsReady && quiet) || now - started >= timeoutMs) {
 						clearInterval(timer);
 						observer.disconnect();
-						resolve({ fontsReady, quiet });
+						const animations = document.getAnimations();
+						resolve({
+							fontsReady,
+							quiet,
+							lastMutation,
+							runningAnimations: animations.length,
+							infiniteAnimations: animations.filter((a) => a.effect?.getComputedTiming().iterations === Infinity).length
+						});
 					}
 				}, 50);
 			}),

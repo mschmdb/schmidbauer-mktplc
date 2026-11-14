@@ -21,8 +21,8 @@ Boxes are `{x, y, w, h}` in CSS pixels, in document coordinates. Screenshots use
 | `device` | Playwright device name for mobile (iPhone 13). `null` on desktop. | |
 | `userAgent` | User agent of the context. | |
 | `status` | HTTP status of the load. 401, 403 or 429 means the measurements describe a wall. | |
-| `timing` | `domContentLoadedMs`, `loadMs`, `settledMs`, `fontsReady`, `domQuiet`. Settled means fonts ready and 500 ms without DOM change, capped at 8 s (own values). | M3, T8 |
-| `frames` | Load frames: `file`, `targetMs` (300, 1000, 2500), `atMs` (real capture time). | M1, M3, P2 |
+| `timing` | `domContentLoadedMs`, `loadMs`, `settledMs`, `fontsReady`, `domQuiet`. All values count from navigation start. Settled means fonts ready and 500 ms without DOM change. The 8 s cap (own values) starts after the load frames, so `settledMs` can pass 10 s. An unsettled page adds a note with the last changed node, pending requests and running animations. | M3, T8 |
+| `frames` | Load frames: `file`, `targetMs` (300, 1000, 2500), `atMs` (real capture time from navigation start). A frame more than 200 ms late (own value) adds a note such as "t300 captured at 940 ms"; read the file name as the target and `atMs` as the truth. | M1, M3, P2 |
 | `fullPage`, `scrollHeight` | Full-page screenshot name and document height. The page is scrolled once first so lazy content loads (cap 30 steps, own value). `fullPage` is `null` when the capture failed twice. | |
 | `missing` | Steps that failed: `fullPage`, `pixels`, `measure`, `design`, `focus`, `axe`, `frame t<ms>`, `scroll shot <y>`. Each capture is retried once after 500 ms (own value) and a failure never empties the other data. Empty when all steps worked. | |
 | `scrollShots` | Scroll series: `file`, `y`. Evenly spaced, top excluded, last at the bottom, at most 12 shots including the top (own value). Empty for a one-screen page. | M1, M3, G8 |
@@ -102,7 +102,7 @@ Measured on `<viewport>-viewport.png`. Thresholds are own values.
 
 | File | Shows |
 |---|---|
-| `<viewport>-t300.png`, `-t1000`, `-t2500` | Load frames, taken from the first paint at 300, 1000 and 2500 ms. |
+| `<viewport>-t300.png`, `-t1000`, `-t2500` | Load frames from navigation start, targeted at 300, 1000 and 2500 ms. `frames[].atMs` holds the real time. |
 | `<viewport>-viewport.png` | First viewport after the page settled, at scroll 0. Pixel measures and the design boxes refer to it. |
 | `<viewport>-viewport-grey.png`, `-viewport-blur.png` | Greyscale copy and Gaussian blur (sigma 8) of it. |
 | `<viewport>-full.png` | Whole page after a scroll pass. |

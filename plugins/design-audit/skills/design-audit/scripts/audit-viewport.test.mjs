@@ -2,6 +2,7 @@
 import { test, after } from 'node:test';
 import assert from 'node:assert/strict';
 import { chromium } from 'playwright';
+import { createServer } from 'node:http';
 import { mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
@@ -72,4 +73,51 @@ test('a failed load frame and a failed viewport shot are recorded, the rest stay
 	assert.ok(result.measure && result.design && result.focus);
 	assert.deepEqual(result.missing.sort(), ['frame t1000', 'pixels']);
 	assert.equal(notes.length, 2);
+});
+
+test('a frame that comes late is noted with its real time', { skip, timeout: 120000 }, async () => {
+	const out = mkdtempSync(join(tmpdir(), 'design-audit-vp-'));
+	const notes = [];
+	try {
+		const slowFirst = async (page, path, options) => {
+			if (path.endsWith('desktop-t300.png')) await new Promise((resolve) => setTimeout(resolve, 1400));
+			return page.screenshot({ path, scale: 'css', ...options });
+		};
+		const result = await auditViewport(browser, 'desktop', { viewport: { width: 1280, height: 800 } }, notes, { url: fixtureUrl('site.html'), out, screenshot: slowFirst });
+		assert.ok(result.frames[1].atMs - 1000 > 200);
+		assert.ok(notes.some((n) => /^desktop: t1000 captured at \d+ ms/.test(n)), notes.join('\n'));
+	} finally {
+		rmSync(out, { recursive: true, force: true });
+	}
+});
+
+test('an unsettled page says what kept it busy: last DOM change, pending requests, endless animations', { skip, timeout: 120000 }, async () => {
+	const html = `<!doctype html><html><body><p id="p">x</p><div id="spin" style="width:20px;height:20px;background:red;animation:spin 1s linear infinite"></div>
+<style>@keyframes spin{to{transform:rotate(360deg)}}</style>
+<script>setInterval(() => { document.getElementById('p').textContent = String(Math.random()); }, 40); fetch('/hang');</script></body></html>`;
+	const hanging = [];
+	const server = createServer((req, res) => {
+		if (req.url === '/hang') {
+			hanging.push(res);
+			return;
+		}
+		res.writeHead(200, { 'content-type': 'text/html' });
+		res.end(html);
+	});
+	await new Promise((resolve) => server.listen(0, '127.0.0.1', resolve));
+	const out = mkdtempSync(join(tmpdir(), 'design-audit-vp-'));
+	const notes = [];
+	try {
+		const { port } = /** @type {import('node:net').AddressInfo} */ (server.address());
+		await auditViewport(browser, 'desktop', { viewport: { width: 1280, height: 800 } }, notes, { url: `http://127.0.0.1:${port}/`, out, settleOptions: { quietMs: 300, timeoutMs: 1500 } });
+		const note = notes.find((n) => /page not settled/.test(n));
+		assert.ok(note, notes.join('\n'));
+		assert.match(note, /last DOM change in p#p/);
+		assert.match(note, /1 pending request/);
+		assert.match(note, /1 running animation \(1 endless\)/);
+	} finally {
+		for (const res of hanging) res.destroy();
+		server.close();
+		rmSync(out, { recursive: true, force: true });
+	}
 });

@@ -10,6 +10,7 @@ import { scrollSeriesPositions } from './lib/scroll.mjs';
 import { finishMeasure } from './lib/post.mjs';
 import { finishDesign } from './lib/design.mjs';
 import { withRetry } from './lib/retry.mjs';
+import { describeBusy, lateFrameNotes } from './lib/timing.mjs';
 import { runDesignScripts } from './design-scripts.mjs';
 import { pixelReport } from './pixels.mjs';
 import { boxesForNodes } from './page-boxes.mjs';
@@ -56,9 +57,9 @@ function emptyViewport(name, contextOptions) {
  * @param {'desktop' | 'mobile'} name
  * @param {import('playwright').BrowserContextOptions} contextOptions
  * @param {string[]} notes shared note list; this function appends
- * @param {{ url: string, out: string, screenshot?: Function, retryDelayMs?: number }} options `screenshot(page, path, options)` replaces page.screenshot (tests inject failures)
+ * @param {{ url: string, out: string, screenshot?: Function, retryDelayMs?: number, settleOptions?: object }} options `screenshot(page, path, options)` replaces page.screenshot (tests inject failures); `settleOptions` go to waitForSettled
  */
-export async function auditViewport(browser, name, contextOptions, notes, { url, out, screenshot = defaultScreenshot, retryDelayMs }) {
+export async function auditViewport(browser, name, contextOptions, notes, { url, out, screenshot = defaultScreenshot, retryDelayMs, settleOptions }) {
 	const result = emptyViewport(name, contextOptions);
 	const retry = retryDelayMs === undefined ? {} : { delayMs: retryDelayMs };
 	/** Capture with one retry. Returns true on success; a failure is noted and listed in `missing`. */
@@ -85,6 +86,11 @@ export async function auditViewport(browser, name, contextOptions, notes, { url,
 	const context = await browser.newContext(contextOptions);
 	try {
 		const page = await context.newPage();
+		// Requests that have started and not finished: what a never-idle page waits for.
+		const pending = new Set();
+		page.on('request', (r) => pending.add(r));
+		page.on('requestfinished', (r) => pending.delete(r));
+		page.on('requestfailed', (r) => pending.delete(r));
 		result.userAgent = await page.evaluate(() => navigator.userAgent).catch(() => null);
 
 		// Animation frames from first paint, before the page has settled. `atMs` is the real capture time.
@@ -107,9 +113,11 @@ export async function auditViewport(browser, name, contextOptions, notes, { url,
 		}
 		await page.waitForLoadState('load', { timeout: 60000 });
 		const loadMs = loadEventMs ?? Date.now() - start;
-		const settle = await waitForSettled(page);
+		notes.push(...lateFrameNotes(name, result.frames));
+		const settle = await waitForSettled(page, settleOptions);
 		if (!settle.fontsReady || !settle.quiet) {
-			notes.push(`${name}: page not settled (fonts ready: ${settle.fontsReady}, DOM quiet: ${settle.quiet}); measurements may miss late content.`);
+			const busy = describeBusy({ ...settle, pendingRequests: pending.size });
+			notes.push(`${name}: page not settled (fonts ready: ${settle.fontsReady}, DOM quiet: ${settle.quiet}); ${busy}. Measurements may miss late content.`);
 		}
 		result.timing = { domContentLoadedMs, loadMs, settledMs: Date.now() - start, fontsReady: settle.fontsReady, domQuiet: settle.quiet };
 
